@@ -10,10 +10,12 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class RestClientConfig {
 
-    private final String BASE_URL = "http://api.football-data.org/v4/";
+    private final String BASE_URL;
     private final String TOKEN;
 
-    public RestClientConfig(@Value("${football-data.token}") String TOKEN) {
+    public RestClientConfig(@Value("${football-data.base-url}") String BASE_URL,
+                            @Value("${football-data.token}") String TOKEN) {
+        this.BASE_URL = BASE_URL;
         this.TOKEN = TOKEN;
     }
 

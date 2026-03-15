@@ -21,7 +21,7 @@ public class FootballService {
         LocalDate today = LocalDate.now();
         log.debug("Getting matches for {} for: {}", COMPETITION, today);
 
-        Matches matches = restClient.get()
+        return restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/competitions/{competition}/matches")
                         .queryParam("dateFrom", today)
@@ -29,7 +29,5 @@ public class FootballService {
                         .build(COMPETITION))
                 .retrieve()
                 .body(Matches.class);
-
-        return matches;
     }
 }
