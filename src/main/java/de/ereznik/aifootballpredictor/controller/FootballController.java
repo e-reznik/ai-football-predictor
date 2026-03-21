@@ -1,9 +1,11 @@
 package de.ereznik.aifootballpredictor.controller;
 
-import de.ereznik.aifootballpredictor.dto.Matches;
+import de.ereznik.aifootballpredictor.dto.ml.PredictionResponse;
 import de.ereznik.aifootballpredictor.service.FootballService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @RestController
 public class FootballController {
@@ -13,8 +15,8 @@ public class FootballController {
         this.footballService = footballService;
     }
 
-    @GetMapping("matches")
-    public Matches getMatches() {
-        return footballService.getMatches();
+    @GetMapping("predict")
+    public Map<String, PredictionResponse> getPredictions() {
+        return footballService.runPredictions();
     }
 }

@@ -10,21 +10,20 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class RestClientConfig {
 
-    private final String BASE_URL;
-    private final String TOKEN;
+    private final String baseUrl;
+    private final String token;
 
-    public RestClientConfig(@Value("${football-data.base-url}") String BASE_URL,
-                            @Value("${football-data.token}") String TOKEN) {
-        this.BASE_URL = BASE_URL;
-        this.TOKEN = TOKEN;
+    public RestClientConfig(@Value("${football-data.base-url}") String baseUrl,
+                            @Value("${football-data.token}") String token) {
+        this.baseUrl = baseUrl;
+        this.token = token;
     }
 
     @Bean
     public RestClient myRestClient(RestClient.Builder builder) {
-        log.debug("Creating RestClient with token {}", TOKEN);
         return builder
-                .baseUrl(BASE_URL)
-                .defaultHeader("X-Auth-Token", TOKEN)
+                .baseUrl(baseUrl)
+                .defaultHeader("X-Auth-Token", token)
                 .requestInterceptor((request, body, execution) -> {
                     log.info("URI: {}", request.getURI());
                     return execution.execute(request, body);
