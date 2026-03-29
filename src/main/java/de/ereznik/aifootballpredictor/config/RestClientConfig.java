@@ -24,10 +24,7 @@ public class RestClientConfig {
         return builder
                 .baseUrl(baseUrl)
                 .defaultHeader("X-Auth-Token", token)
-                .requestInterceptor((request, body, execution) -> {
-                    log.info("URI: {}", request.getURI());
-                    return execution.execute(request, body);
-                })
+                .requestInterceptor((request, body, execution) -> execution.execute(request, body))
                 .build();
     }
 }

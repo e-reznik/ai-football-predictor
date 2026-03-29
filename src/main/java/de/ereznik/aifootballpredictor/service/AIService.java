@@ -1,6 +1,7 @@
 package de.ereznik.aifootballpredictor.service;
 
 
+import de.ereznik.aifootballpredictor.client.AiClient;
 import de.ereznik.aifootballpredictor.dto.football.MatchesResponse;
 import de.ereznik.aifootballpredictor.dto.ml.PredictionResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +9,6 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,17 +21,16 @@ import java.util.Map;
 @Slf4j
 public class AIService {
 
+    private final AiClient aiClient;
     private final String promptPrefix;
     private final String promptSuffix;
     private final String jsonExampleStructure;
-    private final ObjectMapper objectMapper;
 
-    public AIService(@Value("${ai.prompt.prefix}") String promptPrefix,
-                     @Value("${ai.prompt.suffix}") String promptSuffix, ObjectMapper objectMapper) {
+    public AIService(AiClient aiClient, @Value("${ai.prompt.prefix}") String promptPrefix,
+                     @Value("${ai.prompt.suffix}") String promptSuffix) {
+        this.aiClient = aiClient;
         this.promptPrefix = promptPrefix;
         this.promptSuffix = promptSuffix;
-        this.objectMapper = objectMapper;
-
         try {
             jsonExampleStructure = new ClassPathResource("example-structure.json")
                     .getContentAsString(StandardCharsets.UTF_8);
@@ -57,8 +56,7 @@ public class AIService {
 
             promptsAllMatches.add(result.toString());
         }
-
-        log.info("Prompts created: {}", promptsAllMatches);
+        log.debug("Prompts created: {}", promptsAllMatches);
         return promptsAllMatches;
     }
 
@@ -67,30 +65,17 @@ public class AIService {
 
         for (ChatModel chatModel : chatModels) {
             for (String prompt : prompts) {
-                log.trace("Getting predictions from {} for {}", chatModel, prompt);
+                String modelName = chatModel.getDefaultOptions().getModel();
                 try {
-                    PredictionResponse predictionResponse = parseJson(chatModel.call(prompt));
+                    PredictionResponse predictionResponse = aiClient.retrieveResponseFromModel(chatModel, prompt);
                     if (predictionResponse != null) {
-                        predictions.put(chatModel.toString(), predictionResponse);
+                        predictions.put(modelName, predictionResponse);
                     }
                 } catch (RuntimeException e) {
-                    log.error("Error parsing {} for {}", chatModel, prompt, e.getCause());
+                    log.error("Error parsing response from {}", chatModel, e);
                 }
             }
         }
         return predictions;
-    }
-
-    private PredictionResponse parseJson(String json) {
-        String cleaned = json.strip();
-        if (cleaned.startsWith("```")) {
-            cleaned = cleaned.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("```\\s*$", "").strip();
-        }
-        try {
-            return objectMapper.readValue(cleaned, PredictionResponse.class);
-        } catch (RuntimeException e) {
-            log.error("Error parsing response: {}", json, e);
-            return null;
-        }
     }
 }
