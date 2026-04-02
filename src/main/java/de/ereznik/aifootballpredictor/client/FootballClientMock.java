@@ -1,6 +1,7 @@
 package de.ereznik.aifootballpredictor.client;
 
 import de.ereznik.aifootballpredictor.dto.football.MatchesResponse;
+import de.ereznik.aifootballpredictor.dto.football.Status;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -18,8 +19,17 @@ public class FootballClientMock implements FootballClient {
     }
 
     @Override
-    public MatchesResponse fetchMatches(LocalDate today, String competition) {
-        try (var is = getClass().getResourceAsStream("/mock-data/football-response.json")) {
+    public MatchesResponse fetchScheduledMatches(LocalDate from, LocalDate to, String competition) {
+        return getMatches(Status.SCHEDULED);
+    }
+
+    @Override
+    public MatchesResponse fetchFinishedMatches(LocalDate from, LocalDate to, String competition) {
+        return getMatches(Status.FINISHED);
+    }
+
+    private MatchesResponse getMatches(Status status) {
+        try (var is = getClass().getResourceAsStream("/mock-data/football-response-" + status.toString().toLowerCase() + ".json")) {
             return objectMapper.readValue(is, MatchesResponse.class);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load mock data", e);

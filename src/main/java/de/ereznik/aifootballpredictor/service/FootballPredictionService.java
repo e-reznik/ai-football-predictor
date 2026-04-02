@@ -6,6 +6,7 @@ import de.ereznik.aifootballpredictor.dto.ml.PredictionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,14 +17,14 @@ import java.util.Map;
 
 @Slf4j
 @Service
-public class FootballService {
+public class FootballPredictionService {
     private final FootballClient footballClient;
     private final AIService aiService;
     private final PredictionPersistenceService predictionPersistenceService;
     private final List<String> competitions;
     private final List<ChatModel> chatModels;
 
-    public FootballService(FootballClient footballClient, AIService aiService, PredictionPersistenceService predictionPersistenceService, @Value("${football-data.competitions}") List<String> competitions, List<ChatModel> chatModels) {
+    public FootballPredictionService(FootballClient footballClient, AIService aiService, PredictionPersistenceService predictionPersistenceService, @Value("${football-data.competitions}") List<String> competitions, List<ChatModel> chatModels) {
         this.footballClient = footballClient;
         this.aiService = aiService;
         this.predictionPersistenceService = predictionPersistenceService;
@@ -35,6 +36,7 @@ public class FootballService {
                 .toList());
     }
 
+    @Scheduled(initialDelay = 0, fixedRate = 60000)
     public Map<String, PredictionResponse> runPredictions() {
         List<MatchesResponse> matches = getMatches();
         if (matches == null || matches.isEmpty()) {
@@ -55,7 +57,7 @@ public class FootballService {
 
         for (String competition : competitions) {
             log.info("Getting matches for {} for {}", competition, today);
-            MatchesResponse matchesOneLeague = footballClient.fetchMatches(today, competition);
+            MatchesResponse matchesOneLeague = footballClient.fetchScheduledMatches(today, today, competition);
             if (matchesOneLeague != null && !matchesOneLeague.matches().isEmpty()) {
                 matchesAllLeagues.add(matchesOneLeague);
             } else {
