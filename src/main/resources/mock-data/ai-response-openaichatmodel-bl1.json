@@ -1,0 +1,27 @@
+```json{
+  "matches": [
+    {
+      "teams": {
+        "home": "Union Berlin",
+        "away": "St. Pauli"
+      },
+      "scores": {
+        "home": 1,
+        "away": 2,
+        "probability": 6
+      }
+    },
+    {
+      "teams": {
+        "home": "Frankfurt",
+        "away": "1. FC Köln"
+      },
+      "scores": {
+        "home": 2,
+        "away": 1,
+        "probability": 6
+      }
+    }
+  ]
+}
+```

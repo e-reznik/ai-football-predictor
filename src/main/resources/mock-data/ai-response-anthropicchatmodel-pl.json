@@ -1,0 +1,27 @@
+```json{
+  "matches": [
+    {
+      "teams": {
+        "home": "Tottenham",
+        "away": "Crystal Palace"
+      },
+      "scores": {
+        "home": 2,
+        "away": 0,
+        "probability": 3
+      }
+    },
+    {
+      "teams": {
+        "home": "Sunderland",
+        "away": "Brighton Hove"
+      },
+      "scores": {
+        "home": 0,
+        "away": 2,
+        "probability": 4
+      }
+    }
+  ]
+}
+```
