@@ -1,8 +1,8 @@
 package de.ereznik.aifootballpredictor.client;
 
-import de.ereznik.aifootballpredictor.dto.ml.PredictionResponse;
-import org.springframework.ai.chat.model.ChatModel;
+import de.ereznik.aifootballpredictor.dto.ai.AiRequest;
+import de.ereznik.aifootballpredictor.dto.ai.PredictionResponse;
 
 public interface AiClient {
-    PredictionResponse retrieveResponseFromModel(ChatModel chatModel, String prompt);
+    PredictionResponse retrieveResponseFromModel(AiRequest aiRequest);
 }

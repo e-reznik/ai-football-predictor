@@ -2,8 +2,10 @@ package de.ereznik.aifootballpredictor.service;
 
 
 import de.ereznik.aifootballpredictor.client.AiClient;
+import de.ereznik.aifootballpredictor.dto.ai.AiRequest;
+import de.ereznik.aifootballpredictor.dto.ai.PredictionResponse;
+import de.ereznik.aifootballpredictor.dto.football.Competition;
 import de.ereznik.aifootballpredictor.dto.football.MatchesResponse;
-import de.ereznik.aifootballpredictor.dto.ml.PredictionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,36 +42,35 @@ public class AIService {
         }
     }
 
-    public List<String> createPrompts(List<MatchesResponse> matchesList) {
-        List<String> promptsAllMatches = new ArrayList<>();
+    public Map<Competition, String> createPrompts(List<MatchesResponse> matchesList) {
+        Map<Competition, String> promptsPerCompetition = new LinkedHashMap<>();
 
         for (MatchesResponse matches : matchesList) {
+            Competition competition = Competition.valueOf(matches.competition().code());
             StringBuilder result = new StringBuilder();
-            String competitionName = matches.competition().name();
 
-            result.append(promptPrefix).append(" ").append(competitionName).append(":\n");
+            result.append(promptPrefix).append(" ").append(matches.competition().name()).append(":\n");
             for (MatchesResponse.Match match : matches.matches()) {
                 result.append(match.homeTeam().name()).append(" vs. ").append(match.awayTeam().name()).append(" on ").append(match.utcDate()).append("\n");
             }
             result.append(promptSuffix).append("\n");
             result.append(jsonExampleStructure);
 
-            promptsAllMatches.add(result.toString());
+            promptsPerCompetition.put(competition, result.toString());
         }
-        log.debug("Prompts created: {}", promptsAllMatches);
-        return promptsAllMatches;
+        log.debug("Prompts created: {}", promptsPerCompetition);
+        return promptsPerCompetition;
     }
 
-    public Map<String, PredictionResponse> getAnswerFromChatModel(List<ChatModel> chatModels, List<String> prompts) {
-        Map<String, PredictionResponse> predictions = new HashMap<>();
+    public List<PredictionResponse> getAnswerFromChatModel(List<ChatModel> chatModels, Map<Competition, String> prompts) {
+        List<PredictionResponse> predictions = new ArrayList<>();
 
         for (ChatModel chatModel : chatModels) {
-            for (String prompt : prompts) {
-                String modelName = chatModel.getDefaultOptions().getModel();
+            for (Map.Entry<Competition, String> entry : prompts.entrySet()) {
                 try {
-                    PredictionResponse predictionResponse = aiClient.retrieveResponseFromModel(chatModel, prompt);
+                    PredictionResponse predictionResponse = aiClient.retrieveResponseFromModel(new AiRequest(chatModel, entry.getKey(), entry.getValue()));
                     if (predictionResponse != null) {
-                        predictions.put(modelName, predictionResponse);
+                        predictions.add(predictionResponse);
                     }
                 } catch (RuntimeException e) {
                     log.error("Error parsing response from {}", chatModel, e);

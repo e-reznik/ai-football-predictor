@@ -1,9 +1,9 @@
 package de.ereznik.aifootballpredictor.client;
 
-import de.ereznik.aifootballpredictor.dto.ml.PredictionResponse;
+import de.ereznik.aifootballpredictor.dto.ai.AiRequest;
+import de.ereznik.aifootballpredictor.dto.ai.PredictionResponse;
 import de.ereznik.aifootballpredictor.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -20,14 +20,15 @@ public class AiClientImpl implements AiClient {
     }
 
     @Override
-    public PredictionResponse retrieveResponseFromModel(ChatModel chatModel, String prompt) {
-        log.debug("Retrieving response from chat model: {}", chatModel);
-        String modelResponse = chatModel.call(prompt);
+    public PredictionResponse retrieveResponseFromModel(AiRequest aiRequest) {
+        log.debug("Retrieving response from chat model: {}", aiRequest.chatModel());
+        String modelResponse = aiRequest.chatModel().call(aiRequest.prompt());
 
         String cleaned = JsonUtils.cleanJson(modelResponse);
 
-        log.debug("Response from {}. Original: {}\nCleaned: {}", chatModel, modelResponse, cleaned);
+        log.debug("Response from {}. Original: {}\nCleaned: {}", aiRequest.chatModel(), modelResponse, cleaned);
 
-        return objectMapper.readValue(cleaned, PredictionResponse.class);
+        return objectMapper.readValue(cleaned, PredictionResponse.class)
+                .toBuilder().chatModel(aiRequest.chatModel()).build();
     }
 }

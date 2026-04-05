@@ -1,11 +1,7 @@
 package de.ereznik.aifootballpredictor.dto.entity;
 
 
-import jakarta.annotation.Nullable;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,16 +16,17 @@ import java.time.LocalDateTime;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class PredictionEntity {
-    // TODO: Add DB constraints
+public class MatchEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Nullable
+    @Column(updatable = false, nullable = false)
     private Long id;
     private String competitionName;
     private Integer gameDay;
     private Integer gameId;
+    @Column(nullable = false)
     private String teamHome;
+    @Column(nullable = false)
     private String teamAway;
     private Integer homeGoalsPredicted;
     private Integer awayGoalsPredicted;
@@ -38,7 +35,9 @@ public class PredictionEntity {
     private Integer probability;
     private String predictionModel;
     @CreationTimestamp
+    @Column(nullable = false)
     private LocalDateTime createdAt;
     @UpdateTimestamp
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 }

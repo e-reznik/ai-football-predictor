@@ -1,8 +1,8 @@
 package de.ereznik.aifootballpredictor.client;
 
-import de.ereznik.aifootballpredictor.dto.ml.PredictionResponse;
+import de.ereznik.aifootballpredictor.dto.ai.AiRequest;
+import de.ereznik.aifootballpredictor.dto.ai.PredictionResponse;
 import de.ereznik.aifootballpredictor.util.JsonUtils;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -21,13 +21,15 @@ public class AiClientMock implements AiClient {
     }
 
     @Override
-    public PredictionResponse retrieveResponseFromModel(ChatModel chatModel, String prompt) {
-        try (InputStream is = getClass().getResourceAsStream("/mock-data/ai-response.json")) {
+    public PredictionResponse retrieveResponseFromModel(AiRequest aiRequest) {
+        String path = "/mock-data/ai-response-" + aiRequest.chatModel().getClass().getSimpleName() + "-" + aiRequest.competition() + ".json";
+        try (InputStream is = getClass().getResourceAsStream(path.toLowerCase())) {
 
             String raw = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             String cleaned = JsonUtils.cleanJson(raw);
 
-            return objectMapper.readValue(cleaned, PredictionResponse.class);
+            return objectMapper.readValue(cleaned, PredictionResponse.class)
+                    .toBuilder().chatModel(aiRequest.chatModel()).build();
         } catch (IOException e) {
             throw new RuntimeException("Failed to load mock data", e);
         }
