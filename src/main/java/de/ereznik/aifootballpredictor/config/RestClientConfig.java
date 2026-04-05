@@ -20,11 +20,10 @@ public class RestClientConfig {
     }
 
     @Bean
-    public RestClient myRestClient(RestClient.Builder builder) {
+    public RestClient getyRestClient(RestClient.Builder builder) {
         return builder
                 .baseUrl(baseUrl)
                 .defaultHeader("X-Auth-Token", token)
-                .requestInterceptor((request, body, execution) -> execution.execute(request, body))
                 .build();
     }
 }
