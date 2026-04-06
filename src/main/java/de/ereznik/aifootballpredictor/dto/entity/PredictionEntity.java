@@ -30,6 +30,7 @@ public class PredictionEntity {
     private Integer homeGoalsPredicted;
     private Integer awayGoalsPredicted;
     private Integer probability;
+    private Integer score;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
