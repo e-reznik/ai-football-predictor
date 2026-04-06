@@ -2,7 +2,9 @@ package de.ereznik.aifootballpredictor.service;
 
 import de.ereznik.aifootballpredictor.dto.ai.PredictionResponse;
 import de.ereznik.aifootballpredictor.dto.entity.MatchEntity;
+import de.ereznik.aifootballpredictor.dto.entity.PredictionEntity;
 import de.ereznik.aifootballpredictor.dto.football.MatchesResponse;
+import de.ereznik.aifootballpredictor.repository.MatchRepository;
 import de.ereznik.aifootballpredictor.repository.PredictionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,24 +15,27 @@ import java.util.List;
 @Slf4j
 @Service
 public class PredictionPersistenceService {
+    private final MatchRepository matchRepository;
     private final PredictionRepository predictionRepository;
 
-    public PredictionPersistenceService(PredictionRepository predictionRepository) {
+    public PredictionPersistenceService(MatchRepository matchRepository, PredictionRepository predictionRepository) {
+        this.matchRepository = matchRepository;
         this.predictionRepository = predictionRepository;
     }
 
     public void persist(List<MatchesResponse> matchesByCompetition, List<PredictionResponse> predictionResponses) {
-        List<MatchEntity> predictionEntities = new ArrayList<>();
+        List<PredictionEntity> predictionEntities = new ArrayList<>();
 
         for (MatchesResponse matches : matchesByCompetition) {
             for (MatchesResponse.Match match : matches.matches()) {
-                MatchEntity matchEntityBase = buildPredictionEntityBase(matches.competition().name(), match);
+                MatchEntity matchEntityBase = matchRepository.findByGameId(match.id())
+                        .orElseGet(() -> matchRepository.save(buildMatchEntityBase(matches.competition().name(), match)));
 
                 for (PredictionResponse predictionResponse : predictionResponses) {
                     String modelName = predictionResponse.chatModel().getClass().getSimpleName();
-                    MatchEntity matchEntity = completePredictionEntity(modelName, predictionResponse, matchEntityBase);
-                    if (matchEntity != null) {
-                        predictionEntities.add(matchEntity);
+                    PredictionEntity predictionEntity = completePredictionEntity(modelName, predictionResponse, matchEntityBase);
+                    if (predictionEntity != null) {
+                        predictionEntities.add(predictionEntity);
                     }
                 }
             }
@@ -39,28 +44,29 @@ public class PredictionPersistenceService {
     }
 
     /**
-     * Creates the base of the PredictionEntity, with general data, without model-specific details.
+     * Creates the base of the MatchEntity, with general data, without model-specific details.
      */
-    private MatchEntity buildPredictionEntityBase(String competitionName, MatchesResponse.Match match) {
+    private MatchEntity buildMatchEntityBase(String competitionName, MatchesResponse.Match match) {
         return MatchEntity.builder()
+                .gameId(match.id())
                 .competitionName(competitionName)
                 .gameDay(match.matchday())
-                .gameId(match.id())
                 .teamHome(match.homeTeam().name())
                 .teamAway(match.awayTeam().name())
                 .build();
     }
 
     /**
-     * Completes the base of the PredictionEntity, by inserting model-specific details.
+     * Completes the PredictionEntity, by inserting model-specific details.
      */
-    private MatchEntity completePredictionEntity(String modelName, PredictionResponse predictionResponse, MatchEntity matchEntityBase) {
+    private PredictionEntity completePredictionEntity(String modelName, PredictionResponse predictionResponse, MatchEntity matchEntityBase) {
         PredictionResponse.Match matchPrediction = findByTeam(predictionResponse, matchEntityBase.getTeamHome(), matchEntityBase.getTeamAway());
         if (matchPrediction == null) {
             return null;
         }
 
-        return matchEntityBase.toBuilder()
+        return PredictionEntity.builder()
+                .match(matchEntityBase)
                 .predictionModel(modelName)
                 .homeGoalsPredicted(matchPrediction.scores().home())
                 .awayGoalsPredicted(matchPrediction.scores().away())
@@ -72,9 +78,9 @@ public class PredictionPersistenceService {
      * Finds and returns the model-specific predictions, corresponding to the match. Using OR rather than AND, because some team names could be spelled differently by the models.
      */
     private PredictionResponse.Match findByTeam(PredictionResponse predictionResponse, String homeTeam, String awayTeam) {
-        for (int i = 0; i < predictionResponse.matches().size(); i++) {
-            if (predictionResponse.matches().get(i).teams().home().equals(homeTeam) || predictionResponse.matches().get(i).teams().away().equals(awayTeam)) {
-                return predictionResponse.matches().get(i);
+        for (PredictionResponse.Match match : predictionResponse.matches()) {
+            if (match.teams().home().equals(homeTeam) || match.teams().away().equals(awayTeam)) {
+                return match;
             }
         }
         return null;

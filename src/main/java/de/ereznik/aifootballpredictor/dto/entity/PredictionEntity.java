@@ -6,37 +6,35 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "match")
+@Table(name = "prediction", uniqueConstraints = @UniqueConstraint(columnNames = {"match_id", "predictionModel"}))
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MatchEntity {
+public class PredictionEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false, nullable = false)
     private Long id;
-    @Column(nullable = false, unique = true)
-    private Long gameId;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "match_id", nullable = false, updatable = false)
+    private MatchEntity match;
+
     @Column(nullable = false)
-    private String competitionName;
-    @Column(nullable = false)
-    private Integer gameDay;
-    @Column(nullable = false)
-    private String teamHome;
-    @Column(nullable = false)
-    private String teamAway;
-    private Integer homeGoalsScored;
-    private Integer awayGoalsScored;
-    @OneToMany(mappedBy = "match")
-    private List<PredictionEntity> predictions;
+    private String predictionModel;
+
+    private Integer homeGoalsPredicted;
+    private Integer awayGoalsPredicted;
+    private Integer probability;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;

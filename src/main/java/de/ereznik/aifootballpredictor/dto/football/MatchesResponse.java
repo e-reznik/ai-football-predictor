@@ -10,7 +10,7 @@ public record MatchesResponse(Competition competition, List<Match> matches) {
     public record Competition(int id, String name, String code) {
     }
 
-    public record Match(int id, LocalDate utcDate, int matchday, Team homeTeam, Team awayTeam,
+    public record Match(Long id, LocalDate utcDate, Integer matchday, Team homeTeam, Team awayTeam,
                         Score score) {
         public record Team(int id, @JsonProperty("shortName") String name) {
         }

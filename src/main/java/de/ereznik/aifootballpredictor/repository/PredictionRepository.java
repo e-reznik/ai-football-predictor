@@ -1,11 +1,7 @@
 package de.ereznik.aifootballpredictor.repository;
 
-import de.ereznik.aifootballpredictor.dto.entity.MatchEntity;
+import de.ereznik.aifootballpredictor.dto.entity.PredictionEntity;
 import org.springframework.data.repository.CrudRepository;
 
-import java.util.List;
-
-public interface PredictionRepository extends CrudRepository<MatchEntity, Long> {
-    List<MatchEntity> findByGameId(Integer gameId);
-
+public interface PredictionRepository extends CrudRepository<PredictionEntity, Long> {
 }
