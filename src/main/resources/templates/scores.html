@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>AI Football Predictor – Dashboard</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --accent: #6366f1;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.07);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* ── Header ─────────────────────────────────────────── */
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e40af 100%);
+            color: white;
+            padding: 28px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-icon {
+            font-size: 2.2rem;
+            line-height: 1;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .header-subtitle {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.55);
+            margin-top: 2px;
+        }
+
+        .header-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header-pill {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: rgba(255, 255, 255, 0.85);
+            padding: 5px 13px;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        /* ── Layout ──────────────────────────────────────────── */
+        .main {
+            padding: 32px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            color: var(--text-secondary);
+            margin: 32px 0 12px;
+        }
+
+        .section-label:first-child {
+            margin-top: 0;
+        }
+
+        /* ── KPI cards ───────────────────────────────────────── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 16px;
+        }
+
+        .kpi-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px 22px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .kpi-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .kpi-sub {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .color-accent {
+            color: var(--accent);
+        }
+
+        .color-success {
+            color: var(--success);
+        }
+
+        .color-warning {
+            color: var(--warning);
+        }
+
+        /* ── Chart cards ─────────────────────────────────────── */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 22px 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+
+        .icon-blue {
+            background: #dbeafe;
+        }
+
+        .icon-green {
+            background: #dcfce7;
+        }
+
+        .icon-purple {
+            background: #ede9fe;
+        }
+
+        .icon-amber {
+            background: #fef3c7;
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* ── Upcoming matches table ───────────────────────────── */
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 9px 14px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+
+        thead th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        thead th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.12s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        tbody td {
+            padding: 11px 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 0.73rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .badge-purple {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .badge-gray {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .team {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .vs {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            background: var(--bg);
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+
+        .pred {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent);
+            letter-spacing: 0.02em;
+        }
+
+        .no-pred {
+            color: #cbd5e1;
+        }
+
+        /* ── Empty state ─────────────────────────────────────── */
+        .empty {
+            text-align: center;
+            padding: 72px 24px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 14px;
+        }
+
+        .empty-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .empty-sub {
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+            }
+
+            .main {
+                padding: 20px;
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <div class="header-icon">⚽</div>
+        <div>
+            <div class="header-title">AI Football Predictor</div>
+            <div class="header-subtitle">Matchday Performance Dashboard</div>
+        </div>
+    </div>
+    <div class="header-pills" th:unless="${competitions.isEmpty()}">
+        <span class="header-pill" th:each="comp : ${competitions}" th:text="${comp}"></span>
+    </div>
+</header>
+
+<main class="main">
+
+    <div class="empty" th:if="${competitions.isEmpty()}">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">No data yet</div>
+        <div class="empty-sub">Run predictions and results first.</div>
+    </div>
+
+    <div th:unless="${competitions.isEmpty()}">
+
+        <!-- KPIs -->
+        <div class="section-label">Overview</div>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Total Predictions</div>
+                <div class="kpi-value color-accent" id="kpi-total">—</div>
+                <div class="kpi-sub">across all models</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Leading Model</div>
+                <div class="kpi-value color-success" id="kpi-best-name" style="font-size:1.3rem">—</div>
+                <div class="kpi-sub" id="kpi-best-pts">highest total points</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Exact Score Rate</div>
+                <div class="kpi-value" id="kpi-exact-rate">—</div>
+                <div class="kpi-sub">3-point predictions</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Competitions</div>
+                <div class="kpi-value color-warning" th:text="${competitions.size()}">—</div>
+                <div class="kpi-sub" id="kpi-comp-names"></div>
+            </div>
+        </div>
+
+        <!-- Performance charts -->
+        <div class="section-label">Performance</div>
+        <div class="chart-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-blue">🏆</div>
+                    <div class="card-title">Total Points by Competition</div>
+                </div>
+                <canvas id="totalChart" style="max-height:260px"></canvas>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-green">🎯</div>
+                    <div class="card-title">Prediction Accuracy</div>
+                </div>
+                <canvas id="accuracyChart" style="max-height:260px"></canvas>
+            </div>
+        </div>
+
+        <!-- Trend charts -->
+        <div class="section-label">Trends</div>
+        <div class="chart-grid">
+            <div class="card" th:each="comp : ${competitions}">
+                <div class="card-header">
+                    <div class="card-icon icon-purple">📈</div>
+                    <div class="card-title" th:text="${comp} + ' — Cumulative Points'"></div>
+                </div>
+                <canvas style="max-height:260px" th:id="'lineChart-' + ${comp}"></canvas>
+            </div>
+        </div>
+
+        <!-- Upcoming matches -->
+        <div class="section-label">Upcoming Fixtures</div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon icon-amber">📅</div>
+                <div class="card-title">Predicted Upcoming Matches</div>
+            </div>
+            <div style="padding: 32px 0; text-align: center; color: var(--text-secondary); font-size: 0.875rem;"
+                 th:if="${upcomingMatches == null or upcomingMatches.isEmpty()}">
+                No upcoming fixtures with predictions yet. Run <code>/predict</code> before today's matches kick off.
+            </div>
+            <div class="table-wrap" th:unless="${upcomingMatches == null or upcomingMatches.isEmpty()}">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Competition</th>
+                        <th>MD</th>
+                        <th>Home</th>
+                        <th></th>
+                        <th>Away</th>
+                        <th th:each="model : ${models}" th:text="${model}"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="match : ${upcomingMatches}">
+                        <td><span class="badge badge-blue" th:text="${match.competition}"></span></td>
+                        <td><span class="badge badge-gray" th:text="${match.gameDay}"></span></td>
+                        <td class="team" th:text="${match.homeTeam}"></td>
+                        <td><span class="vs">vs</span></td>
+                        <td class="team" th:text="${match.awayTeam}"></td>
+                        <td th:each="model : ${models}">
+                                <span class="pred"
+                                      th:if="${match.predictionsByModel.containsKey(model)}"
+                                      th:text="${match.predictionsByModel.get(model)}"></span>
+                            <span class="no-pred"
+                                  th:unless="${match.predictionsByModel.containsKey(model)}">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script th:inline="javascript">
+    const barChartData = /*[[${barChartData}]]*/ null;
+    const accuracyChartData = /*[[${accuracyChartData}]]*/ null;
+    const lineChartsData = /*[[${lineChartsData}]]*/ null;
+    const competitions = /*[[${competitions}]]*/ [];
+    const predictionCounts = /*[[${predictionCounts}]]*/ {};
+    const models = /*[[${models}]]*/ [];
+
+    // Chart.js global defaults
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#64748b';
+
+    const PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+    // KPI — total predictions
+    const totalPred = Object.values(predictionCounts).reduce((a, b) => a + b, 0);
+    document.getElementById('kpi-total').textContent = totalPred || '—';
+
+    // KPI — competitions sub-label
+    document.getElementById('kpi-comp-names').textContent = competitions.join(', ');
+
+    // KPI — leading model
+    if (barChartData) {
+        const totals = {};
+        models.forEach(m => totals[m] = 0);
+        barChartData.datasets.forEach(ds =>
+            ds.data.forEach((v, i) => totals[models[i]] = (totals[models[i]] || 0) + v)
+        );
+        const best = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
+        if (best) {
+            document.getElementById('kpi-best-name').textContent = best[0].split('/').pop();
+            document.getElementById('kpi-best-pts').textContent = best[1] + ' pts total';
+        }
+    }
+
+    // KPI — exact score rate
+    if (accuracyChartData) {
+        let exact = 0, total = 0;
+        accuracyChartData.datasets.forEach(ds => {
+            const sum = ds.data.reduce((a, b) => a + b, 0);
+            total += sum;
+            if (ds.label && ds.label.startsWith('Exact')) exact += sum;
+        });
+        const pct = total > 0 ? Math.round(exact / total * 100) : 0;
+        const el = document.getElementById('kpi-exact-rate');
+        el.textContent = pct + '%';
+        el.className = 'kpi-value ' + (pct >= 30 ? 'color-success' : pct >= 15 ? 'color-warning' : '');
+    }
+
+    // Total points bar chart
+    if (barChartData) {
+        barChartData.datasets.forEach((ds, i) => {
+            ds.backgroundColor = PALETTE[i % PALETTE.length];
+            ds.borderRadius = 6;
+            ds.borderSkipped = false;
+        });
+        new Chart(document.getElementById('totalChart'), {
+            type: 'bar',
+            data: barChartData,
+            options: {
+                responsive: true,
+                plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, padding: 16}}},
+                scales: {
+                    y: {beginAtZero: true, title: {display: true, text: 'Points'}, grid: {color: '#f1f5f9'}},
+                    x: {grid: {display: false}}
+                }
+            }
+        });
+    }
+
+    // Accuracy stacked bar chart
+    if (accuracyChartData) {
+        const accColors = ['#10b981', '#f59e0b', '#ef4444'];
+        accuracyChartData.datasets.forEach((ds, i) => {
+            ds.backgroundColor = accColors[i];
+            ds.borderRadius = 4;
+            ds.borderSkipped = false;
+        });
+        new Chart(document.getElementById('accuracyChart'), {
+            type: 'bar',
+            data: accuracyChartData,
+            options: {
+                responsive: true,
+                plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, padding: 16}}},
+                scales: {
+                    x: {stacked: true, grid: {display: false}},
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {display: true, text: 'Predictions'},
+                        grid: {color: '#f1f5f9'}
+                    }
+                }
+            }
+        });
+    }
+
+    // Cumulative line charts
+    competitions.forEach(comp => {
+        const canvas = document.getElementById('lineChart-' + comp);
+        if (!canvas || !lineChartsData[comp]) return;
+        lineChartsData[comp].datasets.forEach((ds, i) => {
+            const c = PALETTE[i % PALETTE.length];
+            ds.borderColor = c;
+            ds.backgroundColor = c + '18';
+            ds.pointBackgroundColor = c;
+            ds.pointRadius = 4;
+            ds.pointHoverRadius = 6;
+            ds.tension = 0.4;
+            ds.fill = true;
+        });
+        new Chart(canvas, {
+            type: 'line',
+            data: lineChartsData[comp],
+            options: {
+                responsive: true,
+                plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, padding: 16}}},
+                scales: {
+                    x: {title: {display: true, text: 'Matchday'}, grid: {display: false}},
+                    y: {beginAtZero: true, title: {display: true, text: 'Cumulative Points'}, grid: {color: '#f1f5f9'}}
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
