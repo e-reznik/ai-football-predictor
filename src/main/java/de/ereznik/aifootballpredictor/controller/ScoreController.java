@@ -16,7 +16,7 @@ public class ScoreController {
         this.scoreService = scoreService;
     }
 
-    @GetMapping("/scores")
+    @GetMapping("/")
     public String scores(Model model) {
         DashboardData data = scoreService.getDashboardData();
 
@@ -27,7 +27,7 @@ public class ScoreController {
         model.addAttribute("lineChartsData", buildLineChartsData(data));
         model.addAttribute("accuracyChartData", buildAccuracyChartData(data));
         model.addAttribute("upcomingMatches", scoreService.getUpcomingMatches());
-        return "scores";
+        return "index";
     }
 
     private Map<String, Object> buildBarChartData(DashboardData data) {
