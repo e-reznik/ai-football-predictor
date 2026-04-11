@@ -2,13 +2,13 @@ services:
   db:
     image: postgres:17
     environment:
-      POSTGRES_DB: football_predictor
-      POSTGRES_USER: football
-      POSTGRES_PASSWORD: football
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U football -d football_predictor" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -19,9 +19,9 @@ services:
       - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: prd
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/football_predictor
-      SPRING_DATASOURCE_USERNAME: football
-      SPRING_DATASOURCE_PASSWORD: football
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       FOOTBALL_DATA_TOKEN: ${FOOTBALL_DATA_TOKEN}
       SPRING_AI_OPENAI_API_KEY: ${SPRING_AI_OPENAI_API_KEY}
       SPRING_AI_ANTHROPIC_API_KEY: ${SPRING_AI_ANTHROPIC_API_KEY}

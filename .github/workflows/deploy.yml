@@ -19,8 +19,17 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: FOOTBALL_DATA_TOKEN,SPRING_AI_OPENAI_API_KEY,SPRING_AI_ANTHROPIC_API_KEY,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD
           script: |
             cd /opt/ai-football-predictor
             git pull
+            cat > .env <<EOF
+            FOOTBALL_DATA_TOKEN=$FOOTBALL_DATA_TOKEN
+            SPRING_AI_OPENAI_API_KEY=$SPRING_AI_OPENAI_API_KEY
+            SPRING_AI_ANTHROPIC_API_KEY=$SPRING_AI_ANTHROPIC_API_KEY
+            POSTGRES_DB=$POSTGRES_DB
+            POSTGRES_USER=$POSTGRES_USER
+            POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            EOF
             docker compose build app
             docker compose up -d app
