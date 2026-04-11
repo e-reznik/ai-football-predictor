@@ -7,6 +7,7 @@ import de.ereznik.aifootballpredictor.dto.football.MatchesResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -38,7 +39,7 @@ public class FootballPredictionService {
                 .toList());
     }
 
-    //@Scheduled(initialDelay = 0, fixedRate = 60000)
+    @Scheduled(cron = "0 0 1 * * *", zone = "Europe/Berlin")
     public void runPredictions() {
         List<MatchesResponse> matches = getMatches();
 

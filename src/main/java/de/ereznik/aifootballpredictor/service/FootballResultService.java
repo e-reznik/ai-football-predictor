@@ -5,6 +5,7 @@ import de.ereznik.aifootballpredictor.dto.football.Competition;
 import de.ereznik.aifootballpredictor.dto.football.MatchesResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -24,7 +25,7 @@ public class FootballResultService {
         this.competitions = competitions;
     }
 
-    //@Scheduled(initialDelay = 2000, fixedRate = 60000)
+    @Scheduled(cron = "0 0 2 * * *", zone = "Europe/Berlin")
     public void runResults() {
         List<MatchesResponse> matches = getMatches();
         if (matches == null || matches.isEmpty()) {
