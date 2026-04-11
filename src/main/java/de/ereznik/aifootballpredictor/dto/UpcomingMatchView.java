@@ -7,5 +7,6 @@ public record UpcomingMatchView(
         int gameDay,
         String homeTeam,
         String awayTeam,
-        Map<String, String> predictionsByModel
+        Map<String, String> predictionsByModel,
+        Map<String, Integer> probabilitiesByModel
 ) {}

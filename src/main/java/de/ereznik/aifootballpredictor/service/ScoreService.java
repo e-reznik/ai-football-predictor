@@ -103,9 +103,13 @@ public class ScoreService {
         for (MatchEntity match : upcomingEntities) {
             if (match.getPredictions() == null || match.getPredictions().isEmpty()) continue;
             Map<String, String> predictions = new LinkedHashMap<>();
+            Map<String, Integer> probabilities = new LinkedHashMap<>();
             for (PredictionEntity p : match.getPredictions()) {
                 if (p.getHomeGoalsPredicted() != null && p.getAwayGoalsPredicted() != null) {
                     predictions.put(p.getPredictionModel(), p.getHomeGoalsPredicted() + " – " + p.getAwayGoalsPredicted());
+                    if (p.getProbability() != null) {
+                        probabilities.put(p.getPredictionModel(), p.getProbability());
+                    }
                 }
             }
             if (!predictions.isEmpty()) {
@@ -114,7 +118,8 @@ public class ScoreService {
                         match.getGameDay(),
                         match.getTeamHome(),
                         match.getTeamAway(),
-                        predictions
+                        predictions,
+                        probabilities
                 ));
             }
         }
