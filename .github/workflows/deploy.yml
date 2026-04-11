@@ -29,6 +29,7 @@ jobs:
           envs: FOOTBALL_DATA_TOKEN,SPRING_AI_OPENAI_API_KEY,SPRING_AI_ANTHROPIC_API_KEY,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD
           script: |
             cd /opt/ai-football-predictor
+            git config --global --add safe.directory /opt/ai-football-predictor
             git pull
             cat > .env <<EOF
             FOOTBALL_DATA_TOKEN=$FOOTBALL_DATA_TOKEN
