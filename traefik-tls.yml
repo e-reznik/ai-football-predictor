@@ -1,0 +1,4 @@
+tls:
+  certificates:
+    - certFile: /etc/ssl/cloudflare/cert.pem
+      keyFile: /etc/ssl/cloudflare/private.key
