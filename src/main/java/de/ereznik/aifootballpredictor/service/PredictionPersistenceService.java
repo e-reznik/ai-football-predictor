@@ -32,7 +32,7 @@ public class PredictionPersistenceService {
                         .orElseGet(() -> matchRepository.save(buildMatchEntityBase(matches.competition().name(), match)));
 
                 for (PredictionResponse predictionResponse : predictionResponses) {
-                    String modelName = predictionResponse.chatModel().getClass().getSimpleName();
+                    String modelName = predictionResponse.chatModel().getDefaultOptions().getModel();
                     PredictionEntity predictionEntity = completePredictionEntity(modelName, predictionResponse, matchEntityBase);
                     if (predictionEntity != null) {
                         predictionEntities.add(predictionEntity);
