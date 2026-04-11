@@ -1,4 +1,23 @@
 services:
+  traefik:
+    image: traefik:v3
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/tls.yml"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/ssl/cloudflare:/etc/ssl/cloudflare:ro
+      - ./traefik-tls.yml:/etc/traefik/tls.yml:ro
+    restart: unless-stopped
+
   db:
     image: postgres:17
     ports:
@@ -27,6 +46,12 @@ services:
       FOOTBALL_DATA_TOKEN: ${FOOTBALL_DATA_TOKEN}
       SPRING_AI_OPENAI_API_KEY: ${SPRING_AI_OPENAI_API_KEY}
       SPRING_AI_ANTHROPIC_API_KEY: ${SPRING_AI_ANTHROPIC_API_KEY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`predictor.e-reznik.de`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.services.app.loadbalancer.server.port=8081"
     depends_on:
       db:
         condition: service_healthy
