@@ -28,10 +28,14 @@ public class ScoreService {
         Map<String, TreeMap<Integer, Map<String, Integer>>> byMatchday = new LinkedHashMap<>();
         Map<String, Map<String, Integer>> accuracy = new LinkedHashMap<>();
         Map<String, Integer> predictionCount = new LinkedHashMap<>();
+        Set<String> allCompetitions = new LinkedHashSet<>();
+        Set<String> allModels = new LinkedHashSet<>();
 
         for (PredictionEntity p : all) {
             String model = p.getPredictionModel();
             predictionCount.merge(model, 1, (a, b) -> a + b);
+            allModels.add(model);
+            allCompetitions.add(p.getMatch().getCompetitionName());
 
             if (p.getScore() == null) continue;
 
@@ -44,8 +48,8 @@ public class ScoreService {
             addAccuracy(accuracy, model, score);
         }
 
-        List<String> competitions = new ArrayList<>(totals.keySet());
-        List<String> models = extractModels(totals);
+        List<String> competitions = new ArrayList<>(allCompetitions);
+        List<String> models = new ArrayList<>(allModels);
         Map<String, Map<Integer, Map<String, Integer>>> cumulative = buildCumulative(competitions, models, byMatchday);
 
         return new DashboardData(competitions, models, totals, cumulative, accuracy, predictionCount);
@@ -73,17 +77,12 @@ public class ScoreService {
                 .merge(bucket, 1, (a, b) -> a + b);
     }
 
-    private List<String> extractModels(Map<String, Map<String, Integer>> totals) {
-        LinkedHashSet<String> modelSet = new LinkedHashSet<>();
-        totals.values().forEach(m -> modelSet.addAll(m.keySet()));
-        return new ArrayList<>(modelSet);
-    }
-
     private Map<String, Map<Integer, Map<String, Integer>>> buildCumulative(
             List<String> competitions, List<String> models,
             Map<String, TreeMap<Integer, Map<String, Integer>>> byMatchday) {
         Map<String, Map<Integer, Map<String, Integer>>> cumulative = new LinkedHashMap<>();
         for (String comp : competitions) {
+            if (!byMatchday.containsKey(comp)) continue;
             Map<Integer, Map<String, Integer>> cumulativeMatchdays = new LinkedHashMap<>();
             Map<String, Integer> running = new HashMap<>();
             for (Map.Entry<Integer, Map<String, Integer>> entry : byMatchday.get(comp).entrySet()) {

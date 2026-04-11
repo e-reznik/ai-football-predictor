@@ -64,6 +64,7 @@ public class ScoreController {
         Map<String, Object> lineCharts = new LinkedHashMap<>();
         for (String comp : data.competitions()) {
             Map<Integer, Map<String, Integer>> cumulative = data.cumulativeByCompetitionAndMatchday().get(comp);
+            if (cumulative == null) continue;
             List<Integer> matchdays = new ArrayList<>(cumulative.keySet());
             List<Map<String, Object>> datasets = new ArrayList<>();
             int j = 0;
