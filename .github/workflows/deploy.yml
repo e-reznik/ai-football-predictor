@@ -39,4 +39,4 @@ jobs:
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD
             EOF
             docker compose build app
-            docker compose up -d app
+            docker compose up -d --force-recreate app
