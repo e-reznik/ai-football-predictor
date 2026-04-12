@@ -39,6 +39,7 @@ services:
     ports:
       - "8081:8081"
     environment:
+      TZ: Europe/Berlin
       SPRING_PROFILES_ACTIVE: prd
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
