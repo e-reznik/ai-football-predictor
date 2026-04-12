@@ -35,6 +35,9 @@ public class ScoreController {
         model.addAttribute("lineChartsData", buildLineChartsData(data));
         model.addAttribute("accuracyChartData", buildAccuracyChartData(data));
         model.addAttribute("upcomingMatches", scoreService.getUpcomingMatches());
+        model.addAttribute("trackingSince", data.trackingSince());
+        int totalPredictions = data.predictionCountByModel().values().stream().mapToInt(i -> i).sum();
+        model.addAttribute("totalPredictions", totalPredictions);
         return "index";
     }
 

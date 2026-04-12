@@ -9,6 +9,7 @@ public record DashboardData(
         Map<String, Map<String, Integer>> totalByCompetitionAndModel,
         Map<String, Map<Integer, Map<String, Integer>>> cumulativeByCompetitionAndMatchday,
         Map<String, Map<String, Integer>> accuracyByModel,
-        Map<String, Integer> predictionCountByModel
+        Map<String, Integer> predictionCountByModel,
+        String trackingSince
 ) {
 }

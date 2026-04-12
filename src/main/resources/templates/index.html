@@ -382,7 +382,10 @@
         <div class="header-icon">⚽</div>
         <div>
             <div class="header-title">AI Football Predictor</div>
-            <div class="header-subtitle">Matchday Performance Dashboard</div>
+            <div class="header-subtitle" th:if="${trackingSince}"
+                 th:text="'Predicted ' + ${totalPredictions} + ' games by ' + ${models.size()} + ' models · since ' + ${trackingSince}">
+            </div>
+            <div class="header-subtitle" th:unless="${trackingSince}">Matchday Performance Dashboard</div>
         </div>
     </div>
     <div class="header-pills" th:unless="${competitions.isEmpty()}">

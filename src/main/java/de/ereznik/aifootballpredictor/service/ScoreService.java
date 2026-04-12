@@ -10,6 +10,7 @@ import de.ereznik.aifootballpredictor.repository.PredictionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -53,7 +54,11 @@ public class ScoreService {
         List<String> models = new ArrayList<>(allModels);
         Map<String, Map<Integer, Map<String, Integer>>> cumulative = buildCumulative(competitions, models, byMatchday);
 
-        return new DashboardData(competitions, models, totals, cumulative, accuracy, predictionCount);
+        String trackingSince = matchRepository.findFirstByOrderByCreatedAtAsc()
+                .map(m -> m.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .orElse(null);
+
+        return new DashboardData(competitions, models, totals, cumulative, accuracy, predictionCount, trackingSince);
     }
 
     private void addTotal(Map<String, Map<String, Integer>> totals, String competition, String model, int score) {
