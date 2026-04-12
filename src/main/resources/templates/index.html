@@ -315,6 +315,29 @@
             margin-left: 4px;
         }
 
+        /* ── Ranking table ──────────────────────────────────── */
+        .ranking-table th,
+        .ranking-table td {
+            padding: 10px 14px;
+        }
+
+        .ranking-table tbody td:first-child {
+            font-weight: 700;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            width: 40px;
+        }
+
+        .rank-1 { color: #f59e0b !important; }
+        .rank-2 { color: #64748b !important; }
+        .rank-3 { color: #b45309 !important; }
+
+        .pts-total {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent);
+        }
+
         /* ── Empty state ─────────────────────────────────────── */
         .empty {
             text-align: center;
@@ -365,6 +388,7 @@
     <div class="header-pills" th:unless="${competitions.isEmpty()}">
         <span class="header-pill" th:each="comp : ${competitions}" th:text="${comp}"></span>
     </div>
+    <a href="/history" style="background:#6366f1; color:#fff; padding:8px 18px; border-radius:8px; font-size:0.82rem; font-weight:600; text-decoration:none; white-space:nowrap; transition:background 0.15s;">Past Predictions</a>
 </header>
 
 <main class="main">
@@ -399,6 +423,30 @@
                 <div class="kpi-label">Competitions</div>
                 <div class="kpi-value color-warning" th:text="${competitions.size()}">—</div>
                 <div class="kpi-sub" id="kpi-comp-names"></div>
+            </div>
+        </div>
+
+        <!-- Model Ranking -->
+        <div class="section-label">Model Ranking</div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon icon-amber">🥇</div>
+                <div class="card-title">Leaderboard</div>
+            </div>
+            <div class="table-wrap">
+                <table class="ranking-table" id="rankingTable">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Model</th>
+                        <th>Total Pts</th>
+                        <th>Exact (3pts)</th>
+                        <th>Tendency (1pt)</th>
+                        <th>Wrong (0pts)</th>
+                    </tr>
+                    </thead>
+                    <tbody id="rankingBody"></tbody>
+                </table>
             </div>
         </div>
 
@@ -530,6 +578,39 @@
         const el = document.getElementById('kpi-exact-rate');
         el.textContent = pct + '%';
         el.className = 'kpi-value ' + (pct >= 30 ? 'color-success' : pct >= 15 ? 'color-warning' : '');
+    }
+
+    // Model Ranking table
+    if (barChartData && accuracyChartData) {
+        const totalPts = {};
+        models.forEach(m => totalPts[m] = 0);
+        barChartData.datasets.forEach(ds =>
+            ds.data.forEach((v, i) => totalPts[models[i]] = (totalPts[models[i]] || 0) + v)
+        );
+        const accData = {};
+        models.forEach((m, i) => {
+            accData[m] = {
+                exact: accuracyChartData.datasets[0]?.data[i] ?? 0,
+                tendency: accuracyChartData.datasets[1]?.data[i] ?? 0,
+                wrong: accuracyChartData.datasets[2]?.data[i] ?? 0
+            };
+        });
+        const ranked = [...models].sort((a, b) => totalPts[b] - totalPts[a]);
+        const tbody = document.getElementById('rankingBody');
+        const medals = ['rank-1', 'rank-2', 'rank-3'];
+        ranked.forEach((m, idx) => {
+            const rankClass = medals[idx] || '';
+            const shortName = m.split('/').pop();
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td class="${rankClass}">${idx + 1}</td>
+                    <td class="team">${shortName}</td>
+                    <td class="pts-total">${totalPts[m]}</td>
+                    <td>${accData[m].exact}</td>
+                    <td>${accData[m].tendency}</td>
+                    <td>${accData[m].wrong}</td>
+                </tr>`);
+        });
     }
 
     // Total points bar chart

@@ -1,6 +1,7 @@
 package de.ereznik.aifootballpredictor.service;
 
 import de.ereznik.aifootballpredictor.dto.DashboardData;
+import de.ereznik.aifootballpredictor.dto.PastMatchView;
 import de.ereznik.aifootballpredictor.dto.UpcomingMatchView;
 import de.ereznik.aifootballpredictor.dto.entity.MatchEntity;
 import de.ereznik.aifootballpredictor.dto.entity.PredictionEntity;
@@ -94,6 +95,41 @@ public class ScoreService {
             cumulative.put(comp, cumulativeMatchdays);
         }
         return cumulative;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PastMatchView> getPastPredictions() {
+        List<MatchEntity> finishedMatches = matchRepository.findByHomeGoalsScoredIsNotNull();
+        List<PastMatchView> result = new ArrayList<>();
+        for (MatchEntity match : finishedMatches) {
+            if (match.getPredictions() == null || match.getPredictions().isEmpty()) continue;
+            Map<String, String> predictions = new LinkedHashMap<>();
+            Map<String, Integer> scores = new LinkedHashMap<>();
+            for (PredictionEntity p : match.getPredictions()) {
+                if (p.getHomeGoalsPredicted() != null && p.getAwayGoalsPredicted() != null) {
+                    predictions.put(p.getPredictionModel(), p.getHomeGoalsPredicted() + " – " + p.getAwayGoalsPredicted());
+                }
+                if (p.getScore() != null) {
+                    scores.put(p.getPredictionModel(), p.getScore());
+                }
+            }
+            if (!predictions.isEmpty()) {
+                result.add(new PastMatchView(
+                        match.getCompetitionName(),
+                        match.getGameDay(),
+                        match.getTeamHome(),
+                        match.getTeamAway(),
+                        match.getHomeGoalsScored(),
+                        match.getAwayGoalsScored(),
+                        predictions,
+                        scores
+                ));
+            }
+        }
+        result.sort((a, b) -> !a.competition().equals(b.competition())
+                ? a.competition().compareTo(b.competition())
+                : Integer.compare(b.gameDay(), a.gameDay()));
+        return result;
     }
 
     @Transactional(readOnly = true)
