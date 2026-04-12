@@ -123,7 +123,7 @@ public class ScoreService {
                 ));
             }
         }
-        result.sort((a, b) -> a.gameDay() != b.gameDay() ? Integer.compare(a.gameDay(), b.gameDay()) : a.homeTeam().compareTo(b.homeTeam()));
+        result.sort((a, b) -> !a.competition().equals(b.competition()) ? a.competition().compareTo(b.competition()) : Integer.compare(a.gameDay(), b.gameDay()));
         return result;
     }
 }
