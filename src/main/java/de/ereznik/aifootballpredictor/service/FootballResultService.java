@@ -38,11 +38,11 @@ public class FootballResultService {
 
     public List<MatchesResponse> getMatches() {
         List<MatchesResponse> matchesAllLeagues = new ArrayList<>();
-        LocalDate today = LocalDate.now();
+        LocalDate yesterday = LocalDate.now().minusDays(1);
 
         for (Competition competition : competitions) {
-            log.info("Getting matches for {} for {}", competition, today);
-            MatchesResponse matchesOneLeague = footballClient.fetchFinishedMatches(competition, today, today);
+            log.info("Getting matches for {} for {}", competition, yesterday);
+            MatchesResponse matchesOneLeague = footballClient.fetchFinishedMatches(competition, yesterday, yesterday);
             if (matchesOneLeague != null && !matchesOneLeague.matches().isEmpty()) {
                 matchesAllLeagues.add(matchesOneLeague);
             } else {
