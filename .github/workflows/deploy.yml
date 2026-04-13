@@ -39,5 +39,5 @@ jobs:
             POSTGRES_USER=$POSTGRES_USER
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD
             EOF
-            docker compose build app
+            docker compose build --no-cache app
             docker compose up -d --force-recreate
