@@ -47,6 +47,7 @@ services:
       FOOTBALL_DATA_TOKEN: ${FOOTBALL_DATA_TOKEN}
       SPRING_AI_OPENAI_API_KEY: ${SPRING_AI_OPENAI_API_KEY}
       SPRING_AI_ANTHROPIC_API_KEY: ${SPRING_AI_ANTHROPIC_API_KEY}
+      SPRING_AI_MISTRAL_API_KEY: ${SPRING_AI_MISTRAL_API_KEY}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`predictor.e-reznik.de`)"
