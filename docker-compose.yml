@@ -58,5 +58,34 @@ services:
       db:
         condition: service_healthy
 
+  beszel:
+    image: henrygd/beszel
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - beszel_data:/beszel_data
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.beszel.rule=Host(`monitoring.e-reznik.de`)"
+      - "traefik.http.routers.beszel.entrypoints=websecure"
+      - "traefik.http.routers.beszel.tls=true"
+      - "traefik.http.services.beszel.loadbalancer.server.port=8090"
+
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dozzle/users.yml:/data/users.yml
+    environment:
+      DOZZLE_AUTH_PROVIDER: simple
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dozzle.rule=Host(`logs.e-reznik.de`)"
+      - "traefik.http.routers.dozzle.entrypoints=websecure"
+      - "traefik.http.routers.dozzle.tls=true"
+      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+
 volumes:
   postgres_data:
+  beszel_data:
