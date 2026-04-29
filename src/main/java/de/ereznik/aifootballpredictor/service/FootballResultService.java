@@ -1,10 +1,8 @@
 package de.ereznik.aifootballpredictor.service;
 
 import de.ereznik.aifootballpredictor.client.FootballClient;
-import de.ereznik.aifootballpredictor.dto.football.Competition;
 import de.ereznik.aifootballpredictor.dto.football.MatchesResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +15,10 @@ import java.util.List;
 public class FootballResultService {
     private final ResultPersistenceService resultPersistenceService;
     private final FootballClient footballClient;
-    private final List<Competition> competitions;
 
-    public FootballResultService(ResultPersistenceService resultPersistenceService, FootballClient footballClient, @Value("${football-data.competitions}") List<Competition> competitions) {
+    public FootballResultService(ResultPersistenceService resultPersistenceService, FootballClient footballClient) {
         this.resultPersistenceService = resultPersistenceService;
         this.footballClient = footballClient;
-        this.competitions = competitions;
     }
 
     @Scheduled(cron = "0 0 2 * * *", zone = "Europe/Berlin")
@@ -32,24 +28,22 @@ public class FootballResultService {
             log.warn("No matches found");
             return;
         }
-
         resultPersistenceService.persist(matches);
     }
 
     public List<MatchesResponse> getMatches() {
         List<MatchesResponse> matchesAllLeagues = new ArrayList<>();
-        LocalDate yesterday = LocalDate.now().minusDays(1);
+        LocalDate from = LocalDate.now().minusDays(7);
+        LocalDate to = LocalDate.now().minusDays(1);
 
-        for (Competition competition : competitions) {
-            log.info("Getting matches for {} for {}", competition, yesterday);
-            MatchesResponse matchesOneLeague = footballClient.fetchFinishedMatches(competition, yesterday, yesterday);
-            if (matchesOneLeague != null && !matchesOneLeague.matches().isEmpty()) {
-                matchesAllLeagues.add(matchesOneLeague);
-            } else {
-                // TODO: Handle cases, when no matches are played
-                // TODO: Handle cases, when matches got canceled or postponed
-                log.warn("No matches found for {}", competition);
-            }
+        log.info("Getting finished matches from {} to {}", from, to);
+        MatchesResponse matchesOneLeague = footballClient.fetchFinishedMatches(from, to);
+        if (matchesOneLeague != null && !matchesOneLeague.matches().isEmpty()) {
+            matchesAllLeagues.add(matchesOneLeague);
+        } else {
+            // TODO: Handle cases, when no matches are played
+            // TODO: Handle cases, when matches got canceled or postponed
+            log.warn("No finished matches found from {} to {}", from, to);
         }
         return matchesAllLeagues;
     }

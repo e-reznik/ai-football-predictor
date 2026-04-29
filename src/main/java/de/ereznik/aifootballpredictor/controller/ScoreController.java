@@ -1,12 +1,15 @@
 package de.ereznik.aifootballpredictor.controller;
 
-import de.ereznik.aifootballpredictor.dto.DashboardData;
+import de.ereznik.aifootballpredictor.dto.dashboard.DashboardData;
 import de.ereznik.aifootballpredictor.service.ScoreService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class ScoreController {
@@ -38,6 +41,9 @@ public class ScoreController {
         model.addAttribute("trackingSince", data.trackingSince());
         int totalPredictions = data.predictionCountByModel().values().stream().mapToInt(i -> i).sum();
         model.addAttribute("totalPredictions", totalPredictions);
+        model.addAttribute("totalGames", data.totalGames());
+        model.addAttribute("lastPredictionRun", data.lastPredictionRun());
+        model.addAttribute("lastResultsFetched", data.lastResultsFetched());
         return "index";
     }
 

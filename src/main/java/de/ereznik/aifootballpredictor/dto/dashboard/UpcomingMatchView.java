@@ -1,4 +1,4 @@
-package de.ereznik.aifootballpredictor.dto;
+package de.ereznik.aifootballpredictor.dto.dashboard;
 
 import java.util.Map;
 
@@ -9,4 +9,5 @@ public record UpcomingMatchView(
         String awayTeam,
         Map<String, String> predictionsByModel,
         Map<String, Integer> probabilitiesByModel
-) {}
+) {
+}

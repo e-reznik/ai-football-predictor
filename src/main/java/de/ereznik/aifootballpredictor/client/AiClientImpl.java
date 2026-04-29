@@ -28,7 +28,8 @@ public class AiClientImpl implements AiClient {
 
         log.debug("Response from {}. Original: {}\nCleaned: {}", aiRequest.chatModel(), modelResponse, cleaned);
 
+        String modelName = aiRequest.chatModel().getDefaultOptions().getModel();
         return objectMapper.readValue(cleaned, PredictionResponse.class)
-                .toBuilder().chatModel(aiRequest.chatModel()).build();
+                .toBuilder().modelName(modelName).competition(aiRequest.competition()).build();
     }
 }

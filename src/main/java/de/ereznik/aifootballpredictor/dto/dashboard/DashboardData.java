@@ -1,4 +1,4 @@
-package de.ereznik.aifootballpredictor.dto;
+package de.ereznik.aifootballpredictor.dto.dashboard;
 
 import java.util.List;
 import java.util.Map;
@@ -10,6 +10,9 @@ public record DashboardData(
         Map<String, Map<Integer, Map<String, Integer>>> cumulativeByCompetitionAndMatchday,
         Map<String, Map<String, Integer>> accuracyByModel,
         Map<String, Integer> predictionCountByModel,
-        String trackingSince
+        String trackingSince,
+        long totalGames,
+        String lastPredictionRun,
+        String lastResultsFetched
 ) {
 }

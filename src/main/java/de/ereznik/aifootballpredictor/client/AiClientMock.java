@@ -28,8 +28,9 @@ public class AiClientMock implements AiClient {
             String raw = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             String cleaned = JsonUtils.cleanJson(raw);
 
+            String modelName = aiRequest.chatModel().getDefaultOptions().getModel();
             return objectMapper.readValue(cleaned, PredictionResponse.class)
-                    .toBuilder().chatModel(aiRequest.chatModel()).build();
+                    .toBuilder().modelName(modelName).competition(aiRequest.competition()).build();
         } catch (IOException e) {
             throw new RuntimeException("Failed to load mock data", e);
         }
