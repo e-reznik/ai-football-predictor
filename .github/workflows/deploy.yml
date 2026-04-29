@@ -33,6 +33,7 @@ jobs:
           script: |
             cd /opt/ai-football-predictor
             git config --global --add safe.directory /opt/ai-football-predictor
+            git checkout -- .
             git pull
             cat > .env <<EOF
             FOOTBALL_DATA_TOKEN=$FOOTBALL_DATA_TOKEN
