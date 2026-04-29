@@ -114,7 +114,7 @@
 
         .card-title { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
 
-        .table-wrap { overflow-x: auto; }
+        .table-wrap { overflow-x: auto; overflow-y: auto; max-height: 72vh; }
 
         table {
             width: 100%;
@@ -133,6 +133,9 @@
             border-bottom: 1px solid var(--border);
             background: #f8fafc;
             white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
 
         thead th:first-child { border-radius: 8px 0 0 0; }
@@ -215,6 +218,116 @@
         .empty-title { font-size: 1rem; font-weight: 600; }
         .empty-sub   { font-size: 0.875rem; margin-top: 4px; }
 
+        /* ── Frozen columns ──────────────────────────────────── */
+        .frozen { position: sticky; z-index: 1; }
+        thead .frozen { z-index: 3; background: #f8fafc; } /* header + frozen corner needs highest z */
+        tbody td.frozen { background: #fff; }
+        tbody tr:hover td.frozen { background: #f8fafc; }
+        .frozen-last {
+            border-right: 2px solid var(--border);
+            box-shadow: 4px 0 8px -2px rgba(0,0,0,0.06);
+        }
+
+        /* ── Filter bar ──────────────────────────────────────── */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+        }
+
+        .filter-select {
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .filter-reset {
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            background: #fff;
+            cursor: pointer;
+            margin-left: 4px;
+        }
+
+        .filter-reset:hover { background: var(--bg); }
+
+        /* ── Sortable headers ────────────────────────────────── */
+        th[data-sort] { cursor: pointer; user-select: none; }
+        th[data-sort]:hover { color: var(--accent); }
+        th[data-sort]::after { content: ' ⇅'; font-size: 0.6rem; opacity: 0.35; }
+        th.sort-asc::after  { content: ' ↑'; opacity: 1; color: var(--accent); }
+        th.sort-desc::after { content: ' ↓'; opacity: 1; color: var(--accent); }
+
+        /* ── Consensus column ────────────────────────────────── */
+        .consensus-cell {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+        .cons-high { color: var(--success); }
+        .cons-mid  { color: var(--warning); }
+        .cons-low  { color: var(--danger); }
+        .cons-zero { color: #cbd5e1; }
+
+        /* ── Pagination ──────────────────────────────────────── */
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 2px 0;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            min-width: 140px;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .page-btn {
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #fff;
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            min-width: 32px;
+            transition: background 0.12s, border-color 0.12s;
+        }
+
+        .page-btn:hover:not(:disabled) { background: var(--bg); border-color: #94a3b8; }
+        .page-btn:disabled { opacity: 0.35; cursor: default; }
+        .page-btn.page-active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .page-ellipsis { padding: 0 4px; font-size: 0.8rem; color: var(--text-secondary); }
+
         @media (max-width: 768px) {
             .header { padding: 20px; }
             .main   { padding: 20px; }
@@ -249,27 +362,37 @@
                 <div class="card-icon icon-purple">📋</div>
                 <div class="card-title">Predictions vs. Actual Results</div>
             </div>
+            <div class="filter-bar">
+                <span class="filter-label">Filter:</span>
+                <select class="filter-select" id="filterComp"><option value="">All competitions</option></select>
+                <select class="filter-select" id="filterMD"><option value="">All matchdays</option></select>
+                <button class="filter-reset" id="filterReset">Reset</button>
+            </div>
             <div class="table-wrap">
-                <table>
+                <table id="historyTable">
                     <thead>
                     <tr>
-                        <th>Competition</th>
-                        <th>MD</th>
-                        <th>Home</th>
-                        <th></th>
-                        <th>Away</th>
-                        <th>Result</th>
+                        <th class="frozen" data-sort="comp">Competition</th>
+                        <th class="frozen" data-sort="md">MD</th>
+                        <th class="frozen">Home</th>
+                        <th class="frozen"></th>
+                        <th class="frozen">Away</th>
+                        <th class="frozen frozen-last">Result</th>
                         <th th:each="model : ${models}" th:text="${model}"></th>
+                        <th data-sort="consensus">Consensus</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="match : ${pastMatches}">
-                        <td><span class="badge badge-blue" th:text="${match.competition}"></span></td>
-                        <td><span class="badge badge-gray" th:text="${match.gameDay}"></span></td>
-                        <td class="team" th:text="${match.homeTeam}"></td>
-                        <td><span class="vs">vs</span></td>
-                        <td class="team" th:text="${match.awayTeam}"></td>
-                        <td class="result" th:text="${match.homeGoalsScored} + ' – ' + ${match.awayGoalsScored}"></td>
+                    <tr th:each="match : ${pastMatches}"
+                        th:data-comp="${match.competition}"
+                        th:data-md="${match.gameDay}"
+                        th:data-consensus="${match.correctPredictions()}">
+                        <td class="frozen"><span class="badge badge-blue" th:text="${match.competition}"></span></td>
+                        <td class="frozen"><span class="badge badge-gray" th:text="${match.gameDay}"></span></td>
+                        <td class="frozen team" th:text="${match.homeTeam}"></td>
+                        <td class="frozen"><span class="vs">vs</span></td>
+                        <td class="frozen team" th:text="${match.awayTeam}"></td>
+                        <td class="frozen frozen-last result" th:text="${match.homeGoalsScored} + ' – ' + ${match.awayGoalsScored}"></td>
                         <td class="pred-cell" th:each="model : ${models}">
                             <span th:if="${match.predictionsByModel.containsKey(model)}">
                                 <span th:with="pts=${match.scoresByModel.get(model)}"
@@ -282,9 +405,26 @@
                             </span>
                             <span class="score-none" th:unless="${match.predictionsByModel.containsKey(model)}">—</span>
                         </td>
+                        <td th:with="c=${match.correctPredictions()}, t=${match.totalScoredPredictions()}"
+                            th:class="'consensus-cell ' + (${t == 0} ? 'cons-zero' : (${c * 10 >= t * 6} ? 'cons-high' : (${c > 0} ? 'cons-mid' : 'cons-low')))"
+                            th:text="${t > 0} ? ${c} + '/' + ${t} : '—'">
+                        </td>
                     </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="pagination-bar" id="paginationBar">
+                <span class="pagination-info" id="paginationInfo"></span>
+                <div class="pagination-controls">
+                    <button class="page-btn" id="pagePrev">←</button>
+                    <span id="pageNumbers"></span>
+                    <button class="page-btn" id="pageNext">→</button>
+                </div>
+                <select class="filter-select" id="pageSize">
+                    <option value="10">10 / page</option>
+                    <option value="20" selected>20 / page</option>
+                    <option value="50">50 / page</option>
+                </select>
             </div>
         </div>
     </div>
@@ -300,5 +440,132 @@
     &copy; 2026 <a href="https://e-reznik.de" style="color: #6366f1; text-decoration: none;" target="_blank">Evgenij Reznik</a>
 </footer>
 
+<script>
+(function () {
+    const table = document.getElementById('historyTable');
+    if (!table) return;
+
+    // ── Sticky left positions ─────────────────────────────────────
+    const FROZEN = 6;
+    function setupSticky() {
+        let left = 0;
+        for (let i = 1; i <= FROZEN; i++) {
+            const th = table.querySelector(`thead tr th:nth-child(${i})`);
+            if (!th) break;
+            table.querySelectorAll(`tr > *:nth-child(${i})`).forEach(c => { c.style.left = left + 'px'; });
+            left += th.offsetWidth;
+        }
+    }
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(setupSticky);
+
+    // ── State ─────────────────────────────────────────────────────
+    const allRows = [...table.querySelectorAll('tbody tr')];
+    let sortedRows = [...allRows];
+    let currentPage = 1;
+    const compSel = document.getElementById('filterComp');
+    const mdSel   = document.getElementById('filterMD');
+    const pageSizeSel = document.getElementById('pageSize');
+
+    // ── Populate filter dropdowns ─────────────────────────────────
+    const comps = new Set(), mds = new Set();
+    allRows.forEach(r => { comps.add(r.dataset.comp); mds.add(r.dataset.md); });
+    [...comps].sort().forEach(c =>
+        compSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+    [...mds].sort((a, b) => Number(a) - Number(b)).forEach(m =>
+        mdSel.insertAdjacentHTML('beforeend', `<option value="${m}">MD ${m}</option>`));
+
+    // ── Core: filter → paginate → render ─────────────────────────
+    function applyAll() {
+        const comp = compSel.value, md = mdSel.value;
+        const filtered = sortedRows.filter(r =>
+            (!comp || r.dataset.comp === comp) && (!md || r.dataset.md === md));
+
+        const ps = parseInt(pageSizeSel.value, 10);
+        const totalPages = Math.max(1, Math.ceil(filtered.length / ps));
+        currentPage = Math.min(currentPage, totalPages);
+
+        const start = (currentPage - 1) * ps;
+        const pageRows = new Set(filtered.slice(start, start + ps));
+        allRows.forEach(r => { r.style.display = pageRows.has(r) ? '' : 'none'; });
+
+        renderPagination(filtered.length, currentPage, totalPages, ps);
+    }
+
+    function renderPagination(total, page, totalPages, ps) {
+        const start = total === 0 ? 0 : (page - 1) * ps + 1;
+        const end = Math.min(page * ps, total);
+        document.getElementById('paginationInfo').textContent =
+            total > 0 ? `Showing ${start}–${end} of ${total} matches` : 'No matches';
+
+        document.getElementById('pagePrev').disabled = page <= 1;
+        document.getElementById('pageNext').disabled = page >= totalPages;
+
+        const container = document.getElementById('pageNumbers');
+        container.innerHTML = '';
+        pageRange(page, totalPages).forEach(p => {
+            if (p === '…') {
+                container.insertAdjacentHTML('beforeend', `<span class="page-ellipsis">…</span>`);
+            } else {
+                container.insertAdjacentHTML('beforeend',
+                    `<button class="page-btn${p === page ? ' page-active' : ''}" data-page="${p}">${p}</button>`);
+            }
+        });
+    }
+
+    function pageRange(cur, total) {
+        if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+        const set = new Set([1, 2, cur - 1, cur, cur + 1, total - 1, total]);
+        const pages = [...set].filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+        const result = [];
+        pages.forEach((p, i) => {
+            if (i > 0 && p - pages[i - 1] > 1) result.push('…');
+            result.push(p);
+        });
+        return result;
+    }
+
+    // ── Filter events ─────────────────────────────────────────────
+    compSel.addEventListener('change', () => { currentPage = 1; applyAll(); });
+    mdSel.addEventListener('change',   () => { currentPage = 1; applyAll(); });
+    pageSizeSel.addEventListener('change', () => { currentPage = 1; applyAll(); });
+    document.getElementById('filterReset').addEventListener('click', () => {
+        compSel.value = ''; mdSel.value = ''; currentPage = 1; applyAll();
+    });
+
+    // ── Pagination events ─────────────────────────────────────────
+    document.getElementById('pagePrev').addEventListener('click', () => { currentPage--; applyAll(); });
+    document.getElementById('pageNext').addEventListener('click', () => { currentPage++; applyAll(); });
+    document.getElementById('pageNumbers').addEventListener('click', e => {
+        const btn = e.target.closest('[data-page]');
+        if (btn) { currentPage = parseInt(btn.dataset.page, 10); applyAll(); }
+    });
+
+    // ── Sort events ───────────────────────────────────────────────
+    let sortState = {col: null, asc: true};
+    const tbody = table.querySelector('tbody');
+    table.querySelectorAll('thead th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+            const col = th.dataset.sort;
+            sortState.asc = sortState.col === col ? !sortState.asc : true;
+            sortState.col = col;
+            table.querySelectorAll('thead th[data-sort]').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+            th.classList.add(sortState.asc ? 'sort-asc' : 'sort-desc');
+            sortedRows.sort((a, b) => {
+                let av = a.dataset[col] ?? '', bv = b.dataset[col] ?? '';
+                const num = !isNaN(av) && !isNaN(bv) && av !== '' && bv !== '';
+                if (num) { av = Number(av); bv = Number(bv); }
+                return sortState.asc ? (av > bv ? 1 : av < bv ? -1 : 0)
+                                     : (av < bv ? 1 : av > bv ? -1 : 0);
+            });
+            sortedRows.forEach(r => tbody.appendChild(r));
+            currentPage = 1;
+            applyAll();
+        });
+    });
+
+    // ── Initial render ────────────────────────────────────────────
+    applyAll();
+})();
+</script>
 </body>
 </html>

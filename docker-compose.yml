@@ -17,6 +17,8 @@ services:
       - /etc/ssl/cloudflare:/etc/ssl/cloudflare:ro
       - ./traefik-tls.yml:/etc/traefik/tls.yml:ro
     restart: unless-stopped
+    networks:
+      - observability
 
   db:
     image: postgres:17
@@ -26,6 +28,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Europe/Berlin
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -33,6 +36,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - observability
 
   app:
     build: .
@@ -48,6 +53,7 @@ services:
       SPRING_AI_OPENAI_API_KEY: ${SPRING_AI_OPENAI_API_KEY}
       SPRING_AI_ANTHROPIC_API_KEY: ${SPRING_AI_ANTHROPIC_API_KEY}
       SPRING_AI_MISTRAL_API_KEY: ${SPRING_AI_MISTRAL_API_KEY}
+      BRAVE_API_KEY: ${BRAVE_API_KEY}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`predictor.e-reznik.de`)"
@@ -57,6 +63,77 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - observability
+
+  prometheus:
+    image: prom/prometheus:latest
+    environment:
+      - TZ=Europe/Berlin
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+    networks:
+      - observability
+
+  alloy:
+    image: grafana/alloy:latest
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./config/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: run /etc/alloy/config.alloy
+    depends_on:
+      - app
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - observability
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - TZ=Europe/Berlin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_DATE_FORMATS_DEFAULT_TIMEZONE=Europe/Berlin
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`monitoring.e-reznik.de`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - observability
+
+  loki:
+    image: grafana/loki:3.7.1
+    container_name: loki
+    ports:
+      - "3100:3100"
+    environment:
+      - TZ=Europe/Berlin
+    networks:
+      - observability
+    command: -config.file=/etc/loki/local-config.yaml
+
+networks:
+  observability:
+    driver: bridge
 
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:

@@ -373,6 +373,90 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ── Collapsible trends section ───────────────────────── */
+        .section-toggle {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .section-toggle::after {
+            content: '▾';
+            font-size: 0.8rem;
+            display: inline-block;
+            transition: transform 0.2s;
+            color: var(--text-secondary);
+            line-height: 1;
+        }
+
+        .section-toggle.collapsed::after {
+            transform: rotate(-90deg);
+        }
+
+        .section-toggle:hover {
+            color: var(--accent);
+        }
+
+        .collapsible-content {
+            overflow: hidden;
+            max-height: 4000px;
+            opacity: 1;
+            transition: max-height 0.35s ease, opacity 0.25s ease;
+        }
+
+        .collapsible-content.hidden {
+            max-height: 0 !important;
+            opacity: 0;
+        }
+
+        /* ── Mini stacked bar ─────────────────────────────────── */
+        .mini-bar {
+            display: flex;
+            height: 5px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+            background: var(--border);
+            gap: 1px;
+        }
+
+        .mini-bar > div {
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .mini-bar-legend {
+            display: flex;
+            gap: 10px;
+            margin-top: 7px;
+            flex-wrap: wrap;
+        }
+
+        .mini-bar-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .mini-bar-legend-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .kpi-excl {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-left: 4px;
+            letter-spacing: 0;
+        }
     </style>
 </head>
 <body>
@@ -408,24 +492,43 @@
         <div class="section-label">Overview</div>
         <div class="kpi-grid">
             <div class="kpi-card">
-                <div class="kpi-label">Total Predictions</div>
-                <div class="kpi-value color-accent" id="kpi-total">—</div>
-                <div class="kpi-sub">across all models</div>
+                <div class="kpi-label">Games &amp; Predictions</div>
+                <div class="kpi-value color-accent" th:text="${totalGames}">—</div>
+                <div class="kpi-sub" th:text="${totalPredictions} + ' predictions total'">—</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Leading Model</div>
+                <div class="kpi-label">Best Model vs. Random</div>
                 <div class="kpi-value color-success" id="kpi-best-name" style="font-size:1.3rem">—</div>
-                <div class="kpi-sub" id="kpi-best-pts">highest total points</div>
+                <div class="kpi-sub" id="kpi-best-pts">—</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Exact Score Rate</div>
-                <div class="kpi-value" id="kpi-exact-rate">—</div>
-                <div class="kpi-sub">3-point predictions</div>
+                <div class="kpi-label">Prediction Quality</div>
+                <div class="kpi-value" id="kpi-outcome-rate">—<span class="kpi-excl">excl. Random</span></div>
+                <div class="kpi-sub" id="kpi-outcome-sub">correct outcome · exact score</div>
+                <div class="mini-bar" id="kpi-mini-bar">
+                    <div id="mini-bar-exact" style="width:0%;background:#10b981"></div>
+                    <div id="mini-bar-tendency" style="width:0%;background:#f59e0b"></div>
+                    <div id="mini-bar-wrong" style="width:0%;background:#ef4444"></div>
+                </div>
+                <div class="mini-bar-legend">
+                    <div class="mini-bar-legend-item">
+                        <div class="mini-bar-legend-dot" style="background:#10b981"></div>Exact
+                    </div>
+                    <div class="mini-bar-legend-item">
+                        <div class="mini-bar-legend-dot" style="background:#f59e0b"></div>Tendency
+                    </div>
+                    <div class="mini-bar-legend-item">
+                        <div class="mini-bar-legend-dot" style="background:#ef4444"></div>Wrong
+                    </div>
+                </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Competitions</div>
-                <div class="kpi-value color-warning" th:text="${competitions.size()}">—</div>
-                <div class="kpi-sub" id="kpi-comp-names"></div>
+                <div class="kpi-label">Last Updated</div>
+                <div class="kpi-value" style="font-size:1.3rem"
+                     th:text="${lastPredictionRun != null ? lastPredictionRun : '—'}">—</div>
+                <div class="kpi-sub" th:if="${lastResultsFetched != null}"
+                     th:text="'results: ' + ${lastResultsFetched}"></div>
+                <div class="kpi-sub" th:unless="${lastResultsFetched != null}">no results fetched yet</div>
             </div>
         </div>
 
@@ -473,14 +576,18 @@
         </div>
 
         <!-- Trend charts -->
-        <div class="section-label">Trends</div>
-        <div class="chart-grid">
-            <div class="card" th:each="comp : ${competitions}">
-                <div class="card-header">
-                    <div class="card-icon icon-purple">📈</div>
-                    <div class="card-title" th:text="${comp} + ' — Cumulative Points'"></div>
+        <div class="section-label section-toggle" id="trendsToggle">Trends</div>
+        <div class="collapsible-content" id="trendsContent">
+            <div class="chart-grid">
+                <div class="card" th:each="comp : ${competitions}">
+                    <div class="card-header">
+                        <div class="card-icon icon-purple">📈</div>
+                        <div class="card-title" th:text="${comp} + ' — Cumulative Points'"></div>
+                    </div>
+                    <div style="position:relative;height:340px">
+                        <canvas th:id="'lineChart-' + ${comp}"></canvas>
+                    </div>
                 </div>
-                <canvas style="max-height:260px" th:id="'lineChart-' + ${comp}"></canvas>
             </div>
         </div>
 
@@ -496,7 +603,7 @@
                 No upcoming fixtures with predictions yet. Run <code>/predict</code> before today's matches kick off.
             </div>
             <div class="table-wrap" th:unless="${upcomingMatches == null or upcomingMatches.isEmpty()}">
-                <table>
+                <table id="upcomingTable">
                     <thead>
                     <tr>
                         <th>Competition</th>
@@ -548,12 +655,6 @@
 
     const PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
-    // KPI — total predictions
-    const totalPred = Object.values(predictionCounts).reduce((a, b) => a + b, 0);
-    document.getElementById('kpi-total').textContent = totalPred || '—';
-
-    // KPI — competitions sub-label
-    document.getElementById('kpi-comp-names').textContent = competitions.join(', ');
 
     // KPI — leading model
     if (barChartData) {
@@ -562,25 +663,40 @@
         barChartData.datasets.forEach(ds =>
             ds.data.forEach((v, i) => totals[models[i]] = (totals[models[i]] || 0) + v)
         );
-        const best = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
+        const nonRandom = Object.entries(totals).filter(([m]) => m !== 'Random');
+        const best = nonRandom.sort((a, b) => b[1] - a[1])[0];
         if (best) {
             document.getElementById('kpi-best-name').textContent = best[0].split('/').pop();
-            document.getElementById('kpi-best-pts').textContent = best[1] + ' pts total';
+            const randomPts = totals['Random'];
+            const sub = randomPts != null
+                ? best[1] + ' pts · Random: ' + randomPts + ' pts'
+                : best[1] + ' pts total';
+            document.getElementById('kpi-best-pts').textContent = sub;
         }
     }
 
-    // KPI — exact score rate
+    // KPI — prediction quality (outcome accuracy + exact score rate, excluding Random)
     if (accuracyChartData) {
-        let exact = 0, total = 0;
+        const randomIdx = models.indexOf('Random');
+        let exact = 0, tendency = 0, wrong = 0;
         accuracyChartData.datasets.forEach(ds => {
-            const sum = ds.data.reduce((a, b) => a + b, 0);
-            total += sum;
-            if (ds.label && ds.label.startsWith('Exact')) exact += sum;
+            const lbl = (ds.label || '').toLowerCase();
+            ds.data.forEach((v, i) => {
+                if (i === randomIdx) return;
+                if (lbl.startsWith('exact')) exact += v;
+                else if (lbl.startsWith('correct')) tendency += v;
+                else wrong += v;
+            });
         });
-        const pct = total > 0 ? Math.round(exact / total * 100) : 0;
-        const el = document.getElementById('kpi-exact-rate');
-        el.textContent = pct + '%';
-        el.className = 'kpi-value ' + (pct >= 30 ? 'color-success' : pct >= 15 ? 'color-warning' : '');
+        const total = exact + tendency + wrong;
+        if (total > 0) {
+            const outcomePct = Math.round((exact + tendency) / total * 100);
+            const exactPct = Math.round(exact / total * 100);
+            const el = document.getElementById('kpi-outcome-rate');
+            el.innerHTML = outcomePct + '%<span class="kpi-excl">excl. Random</span>';
+            el.className = 'kpi-value ' + (outcomePct >= 50 ? 'color-success' : outcomePct >= 35 ? 'color-warning' : '');
+            document.getElementById('kpi-outcome-sub').textContent = 'correct outcome · ' + exactPct + '% exact score';
+        }
     }
 
     // Model Ranking table
@@ -664,6 +780,62 @@
         });
     }
 
+    // Mini accuracy bar (excluding Random)
+    if (accuracyChartData) {
+        const randomIdx = models.indexOf('Random');
+        let mbExact = 0, mbTend = 0, mbWrong = 0;
+        accuracyChartData.datasets.forEach(ds => {
+            const lbl = (ds.label || '').toLowerCase();
+            ds.data.forEach((v, i) => {
+                if (i === randomIdx) return;
+                if (lbl.startsWith('exact')) mbExact += v;
+                else if (lbl.startsWith('correct')) mbTend += v;
+                else mbWrong += v;
+            });
+        });
+        const mbTot = mbExact + mbTend + mbWrong;
+        if (mbTot > 0) {
+            document.getElementById('mini-bar-exact').style.width = (mbExact / mbTot * 100) + '%';
+            document.getElementById('mini-bar-tendency').style.width = (mbTend / mbTot * 100) + '%';
+            document.getElementById('mini-bar-wrong').style.width = (mbWrong / mbTot * 100) + '%';
+        }
+    }
+
+    // Collapsible trends section
+    (function () {
+        const toggle = document.getElementById('trendsToggle');
+        const content = document.getElementById('trendsContent');
+        if (toggle && content) {
+            toggle.addEventListener('click', function () {
+                toggle.classList.toggle('collapsed');
+                content.classList.toggle('hidden');
+            });
+        }
+    })();
+
+    // Hide model columns in upcoming table where every cell has no prediction
+    (function () {
+        const tbl = document.getElementById('upcomingTable');
+        if (!tbl) return;
+        const ths = tbl.querySelectorAll('thead th');
+        const bodyRows = tbl.querySelectorAll('tbody tr');
+        if (!bodyRows.length) return;
+        const modelColStart = 5; // Competition, MD, Home, vs, Away
+        for (let ci = modelColStart; ci < ths.length; ci++) {
+            const allEmpty = [...bodyRows].every(row => {
+                const cell = row.querySelectorAll('td')[ci];
+                return cell && cell.querySelector('.no-pred');
+            });
+            if (allEmpty) {
+                ths[ci].style.display = 'none';
+                bodyRows.forEach(row => {
+                    const cell = row.querySelectorAll('td')[ci];
+                    if (cell) cell.style.display = 'none';
+                });
+            }
+        }
+    })();
+
     // Cumulative line charts
     competitions.forEach(comp => {
         const canvas = document.getElementById('lineChart-' + comp);
@@ -671,18 +843,20 @@
         lineChartsData[comp].datasets.forEach((ds, i) => {
             const c = PALETTE[i % PALETTE.length];
             ds.borderColor = c;
-            ds.backgroundColor = c + '18';
+            ds.backgroundColor = c;
             ds.pointBackgroundColor = c;
-            ds.pointRadius = 4;
-            ds.pointHoverRadius = 6;
-            ds.tension = 0.4;
-            ds.fill = true;
+            ds.pointRadius = 5;
+            ds.pointHoverRadius = 7;
+            ds.borderWidth = 2.5;
+            ds.tension = 0.3;
+            ds.fill = false;
         });
         new Chart(canvas, {
             type: 'line',
             data: lineChartsData[comp],
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, padding: 16}}},
                 scales: {
                     x: {title: {display: true, text: 'Matchday'}, grid: {display: false}},

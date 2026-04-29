@@ -11,4 +11,5 @@ public interface MatchRepository extends CrudRepository<MatchEntity, Long> {
     List<MatchEntity> findByHomeGoalsScoredIsNull();
     List<MatchEntity> findByHomeGoalsScoredIsNotNull();
     Optional<MatchEntity> findFirstByOrderByCreatedAtAsc();
+    Optional<MatchEntity> findFirstByHomeGoalsScoredIsNotNullOrderByUpdatedAtDesc();
 }

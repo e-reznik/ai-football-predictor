@@ -30,6 +30,8 @@ public class MatchEntity {
     private String teamHome;
     @Column(nullable = false)
     private String teamAway;
+    private Long homeTeamId;
+    private Long awayTeamId;
     private Integer homeGoalsScored;
     private Integer awayGoalsScored;
     @OneToMany(mappedBy = "match")

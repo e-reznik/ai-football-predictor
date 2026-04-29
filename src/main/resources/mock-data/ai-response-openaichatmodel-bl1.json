@@ -1,27 +1,24 @@
-```json{
-  "matches": [
-    {
-      "teams": {
-        "home": "Union Berlin",
-        "away": "St. Pauli"
-      },
-      "scores": {
-        "home": 1,
-        "away": 2,
-        "probability": 6
-      }
-    },
-    {
-      "teams": {
-        "home": "Frankfurt",
-        "away": "1. FC Köln"
-      },
-      "scores": {
-        "home": 2,
-        "away": 1,
-        "probability": 6
-      }
-    }
-  ]
+```json
+{
+"matches": [
+{
+"home": "Union Berlin",
+"away": "St. Pauli",
+"homeId": "28",
+"awayId": "20",
+"predictedHome": "2",
+"predictedAway": "2",
+"confidence": "5"
+},
+{
+"home": "Frankfurt",
+"away": "1. FC Köln",
+"homeId": "19",
+"awayId": "1",
+"predictedHome": "0",
+"predictedAway": "1",
+"confidence": "7"
+}
+]
 }
 ```
