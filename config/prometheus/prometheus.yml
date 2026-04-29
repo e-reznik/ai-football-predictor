@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: [ 'localhost:9090' ]
+
+  # Scrape the Spring Boot app via Grafana Alloy
+  # Alloy forwards metrics from the app to Prometheus
+  - job_name: 'demo-app'
+    static_configs:
+      - targets: [ 'app:8081' ]
+    metrics_path: '/actuator/prometheus'
