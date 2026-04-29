@@ -1,8 +1,8 @@
 package de.ereznik.aifootballpredictor.service;
 
-import de.ereznik.aifootballpredictor.dto.DashboardData;
-import de.ereznik.aifootballpredictor.dto.PastMatchView;
-import de.ereznik.aifootballpredictor.dto.UpcomingMatchView;
+import de.ereznik.aifootballpredictor.dto.dashboard.DashboardData;
+import de.ereznik.aifootballpredictor.dto.dashboard.PastMatchView;
+import de.ereznik.aifootballpredictor.dto.dashboard.UpcomingMatchView;
 import de.ereznik.aifootballpredictor.dto.entity.MatchEntity;
 import de.ereznik.aifootballpredictor.dto.entity.PredictionEntity;
 import de.ereznik.aifootballpredictor.repository.MatchRepository;
@@ -58,7 +58,18 @@ public class ScoreService {
                 .map(m -> m.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 .orElse(null);
 
-        return new DashboardData(competitions, models, totals, cumulative, accuracy, predictionCount, trackingSince);
+        long totalGames = matchRepository.count();
+
+        DateTimeFormatter ts = DateTimeFormatter.ofPattern("d MMM HH:mm");
+        String lastPredictionRun = predictionRepository.findFirstByOrderByCreatedAtDesc()
+                .map(p -> p.getCreatedAt().format(ts))
+                .orElse(null);
+        String lastResultsFetched = matchRepository.findFirstByHomeGoalsScoredIsNotNullOrderByUpdatedAtDesc()
+                .map(m -> m.getUpdatedAt().format(ts))
+                .orElse(null);
+
+        return new DashboardData(competitions, models, totals, cumulative, accuracy, predictionCount, trackingSince,
+                totalGames, lastPredictionRun, lastResultsFetched);
     }
 
     private void addTotal(Map<String, Map<String, Integer>> totals, String competition, String model, int score) {

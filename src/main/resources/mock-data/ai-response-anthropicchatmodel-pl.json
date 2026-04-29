@@ -1,27 +1,24 @@
-```json{
-  "matches": [
-    {
-      "teams": {
-        "home": "Tottenham",
-        "away": "Crystal Palace"
-      },
-      "scores": {
-        "home": 2,
-        "away": 0,
-        "probability": 3
-      }
-    },
-    {
-      "teams": {
-        "home": "Sunderland",
-        "away": "Brighton Hove"
-      },
-      "scores": {
-        "home": 0,
-        "away": 2,
-        "probability": 4
-      }
-    }
-  ]
+```json
+{
+"matches": [
+{
+"home": "Sunderland",
+"away": "Brighton Hove",
+"homeId": "71",
+"awayId": "397",
+"predictedHome": "1",
+"predictedAway": "1",
+"confidence": "7"
+},
+{
+"home": "Tottenham",
+"away": "Crystal Palace",
+"homeId": "73",
+"awayId": "354",
+"predictedHome": "3",
+"predictedAway": "1",
+"confidence": "6"
+}
+]
 }
 ```

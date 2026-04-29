@@ -24,11 +24,12 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: FOOTBALL_DATA_TOKEN,SPRING_AI_OPENAI_API_KEY,SPRING_AI_ANTHROPIC_API_KEY,SPRING_AI_MISTRAL_API_KEY,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,GRAFANA_ADMIN_PASSWORD
+          envs: FOOTBALL_DATA_TOKEN,SPRING_AI_OPENAI_API_KEY,SPRING_AI_ANTHROPIC_API_KEY,SPRING_AI_MISTRAL_API_KEY,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,GRAFANA_ADMIN_PASSWORD,BRAVE_API_KEY
           script: |
             cd /opt/ai-football-predictor
             git config --global --add safe.directory /opt/ai-football-predictor
@@ -42,6 +43,7 @@ jobs:
             POSTGRES_USER=$POSTGRES_USER
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD
             GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD
+            BRAVE_API_KEY=$BRAVE_API_KEY
             EOF
             docker compose build --no-cache app
             docker compose up -d --force-recreate
