@@ -36,6 +36,7 @@ public class FootballClientImpl implements FootballClient {
                         .queryParam("dateFrom", from)
                         .queryParam("dateTo", to)
                         .queryParam("status", status)
+                        .queryParam("competitions=BL1,PL,SA,PD,FL1,PPL,DED,BSA,ELC,CL,WC,EC,CLI")
                         .build())
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()

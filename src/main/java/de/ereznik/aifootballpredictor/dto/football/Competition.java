@@ -19,6 +19,7 @@ public enum Competition {
     // Cups
     CL("Champions League"),
     WC("World Cup"),
-    EC("European Championship");
+    EC("European Championship"),
+    CLI("Copa Libertadores ");
     private final String displayName;
 }
