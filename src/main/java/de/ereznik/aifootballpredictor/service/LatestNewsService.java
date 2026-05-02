@@ -28,15 +28,14 @@ public class LatestNewsService {
         NewsPerMatchPerCompetition newsPerMatchPerCompetitions = new NewsPerMatchPerCompetition(new HashMap<>());
 
         for (MatchesResponse matches : matchesList) {
-            StringBuilder query = new StringBuilder();
             for (MatchesResponse.Match match : matches.matches()) {
                 String competitionCode = match.competition().code();
                 String homeTeam = match.homeTeam().name();
                 String awayTeam = match.awayTeam().name();
 
-                query.append(competitionCode).append(" ").append(homeTeam).append(" vs. ").append(awayTeam).append(" ").append(suffix);
+                String query = competitionCode + " " + homeTeam + " vs. " + awayTeam + " " + suffix;
 
-                NewsSearchResponse newsSearchResponse = newsRestClient.getLatestNews(query.toString());
+                NewsSearchResponse newsSearchResponse = newsRestClient.getLatestNews(query);
                 log.debug("News response: {}", newsSearchResponse);
 
                 newsPerMatchPerCompetitions.newsPerMatchPerCompetition().computeIfAbsent(Competition.valueOf(competitionCode), k -> new HashMap<>())
