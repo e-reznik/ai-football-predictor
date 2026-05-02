@@ -13,10 +13,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import static de.ereznik.aifootballpredictor.util.JsonUtils.buildJsonStructure;
 
@@ -96,19 +97,23 @@ public class AIService {
     }
 
     public List<PredictionResponse> getAnswerFromChatModel(Map<Competition, String> promptsPerCompetition) {
-        List<PredictionResponse> predictions = new ArrayList<>();
-        for (ChatModel chatModel : chatModels) {
-            for (Map.Entry<Competition, String> entry : promptsPerCompetition.entrySet()) {
-                try {
-                    PredictionResponse predictionResponse = aiClient.retrieveResponseFromModel(new AiRequest(chatModel, Competition.valueOf(entry.getKey().toString()), entry.getValue()));
-                    if (predictionResponse != null) {
-                        predictions.add(predictionResponse);
-                    }
-                } catch (RuntimeException e) {
-                    log.error("Error parsing response from {}", chatModel, e);
-                }
-            }
-        }
-        return predictions;
+        List<CompletableFuture<PredictionResponse>> futures = chatModels.stream()
+                .flatMap(chatModel -> promptsPerCompetition.entrySet().stream()
+                        .map(entry -> CompletableFuture.supplyAsync(() -> {
+                            try {
+                                return aiClient.retrieveResponseFromModel(new AiRequest(chatModel, Competition.valueOf(entry.getKey().toString()), entry.getValue()));
+                            } catch (RuntimeException e) {
+                                log.error("Error parsing response from {}", chatModel, e);
+                                return null;
+                            }
+                        })))
+                .toList();
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> futures.stream()
+                        .map(CompletableFuture::join)
+                        .filter(Objects::nonNull)
+                        .toList())
+                .join();
     }
 }
