@@ -33,8 +33,8 @@ public class FootballResultService {
 
     public List<MatchesResponse> getMatches() {
         List<MatchesResponse> matchesAllLeagues = new ArrayList<>();
-        LocalDate from = LocalDate.now().minusDays(7);
-        LocalDate to = LocalDate.now().minusDays(1);
+        LocalDate from = LocalDate.now().minusDays(3);
+        LocalDate to = LocalDate.now();
 
         log.info("Getting finished matches from {} to {}", from, to);
         MatchesResponse matchesOneLeague = footballClient.fetchFinishedMatches(from, to);
