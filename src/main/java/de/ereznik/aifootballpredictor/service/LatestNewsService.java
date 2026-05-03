@@ -9,10 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -27,22 +25,25 @@ public class LatestNewsService {
     }
 
     public NewsPerMatchPerCompetition getNews(List<MatchesResponse> matchesList) {
-        Map<Competition, Map<MatchesResponse.Match, NewsSearchResponse>> result = new ConcurrentHashMap<>();
+        NewsPerMatchPerCompetition newsPerMatchPerCompetitions = new NewsPerMatchPerCompetition(new HashMap<>());
 
-        List<CompletableFuture<Void>> futures = matchesList.stream()
-                .flatMap(matches -> matches.matches().stream())
-                .map(match -> CompletableFuture.runAsync(() -> {
-                    String competitionCode = match.competition().code();
-                    String query = competitionCode + " " + match.homeTeam().name() + " vs. " + match.awayTeam().name() + " " + suffix;
-                    NewsSearchResponse newsSearchResponse = newsRestClient.getLatestNews(query);
-                    log.debug("News response: {}", newsSearchResponse);
-                    result.computeIfAbsent(Competition.valueOf(competitionCode), k -> new ConcurrentHashMap<>())
-                          .put(match, newsSearchResponse);
-                }))
-                .toList();
+        for (MatchesResponse matches : matchesList) {
+            for (MatchesResponse.Match match : matches.matches()) {
+                String competitionCode = match.competition().code();
+                String homeTeam = match.homeTeam().name();
+                String awayTeam = match.awayTeam().name();
 
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        log.debug("News per competition created: {}", result);
-        return new NewsPerMatchPerCompetition(result);
+                String query = competitionCode + " " + homeTeam + " vs. " + awayTeam + " " + suffix;
+
+                NewsSearchResponse newsSearchResponse = newsRestClient.getLatestNews(query);
+                log.debug("News response: {}", newsSearchResponse);
+
+                newsPerMatchPerCompetitions.newsPerMatchPerCompetition().computeIfAbsent(Competition.valueOf(competitionCode), k -> new HashMap<>())
+                        .put(match, newsSearchResponse);
+            }
+        }
+
+        log.debug("News per competition created: {}", newsPerMatchPerCompetitions);
+        return newsPerMatchPerCompetitions;
     }
 }
