@@ -600,7 +600,7 @@
             </div>
             <div style="padding: 32px 0; text-align: center; color: var(--text-secondary); font-size: 0.875rem;"
                  th:if="${upcomingMatches == null or upcomingMatches.isEmpty()}">
-                No upcoming fixtures with predictions yet. Run <code>/predict</code> before today's matches kick off.
+                No predictions today.
             </div>
             <div class="table-wrap" th:unless="${upcomingMatches == null or upcomingMatches.isEmpty()}">
                 <table id="upcomingTable">
