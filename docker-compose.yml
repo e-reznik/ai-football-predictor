@@ -54,6 +54,7 @@ services:
       SPRING_AI_ANTHROPIC_API_KEY: ${SPRING_AI_ANTHROPIC_API_KEY}
       SPRING_AI_MISTRAL_API_KEY: ${SPRING_AI_MISTRAL_API_KEY}
       BRAVE_API_KEY: ${BRAVE_API_KEY}
+      APP_API_TOKEN: ${APP_API_TOKEN}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`predictor.e-reznik.de`)"
