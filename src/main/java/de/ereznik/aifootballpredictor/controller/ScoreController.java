@@ -19,6 +19,11 @@ public class ScoreController {
         this.scoreService = scoreService;
     }
 
+    @GetMapping("/about")
+    public String about() {
+        return "about";
+    }
+
     @GetMapping("/history")
     public String history(Model model) {
         var data = scoreService.getDashboardData();

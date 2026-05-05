@@ -70,21 +70,27 @@
             margin-top: 2px;
         }
 
-        .header-pills {
+.header-nav {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
-        .header-pill {
+        .nav-link {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.18);
             color: rgba(255, 255, 255, 0.85);
-            padding: 5px 13px;
-            border-radius: 100px;
-            font-size: 0.78rem;
-            font-weight: 500;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s;
         }
+
+        .nav-link:hover { background: rgba(255, 255, 255, 0.2); }
+        .nav-link.active { background: #6366f1; color: #fff; border-color: #6366f1; }
 
         /* ── Layout ──────────────────────────────────────────── */
         .main {
@@ -472,10 +478,12 @@
             <div class="header-subtitle" th:unless="${trackingSince}">Matchday Performance Dashboard</div>
         </div>
     </div>
-    <div class="header-pills" th:unless="${competitions.isEmpty()}">
-        <span class="header-pill" th:each="comp : ${competitions}" th:text="${comp}"></span>
-    </div>
-    <a href="/history" style="background:#6366f1; color:#fff; padding:8px 18px; border-radius:8px; font-size:0.82rem; font-weight:600; text-decoration:none; white-space:nowrap; transition:background 0.15s;">Past Predictions</a>
+
+    <nav class="header-nav">
+        <a class="nav-link active" href="/">Dashboard</a>
+        <a class="nav-link" href="/history">Past Predictions</a>
+        <a class="nav-link" href="/about">About</a>
+    </nav>
 </header>
 
 <main class="main">
@@ -512,20 +520,24 @@
                 </div>
                 <div class="mini-bar-legend">
                     <div class="mini-bar-legend-item">
-                        <div class="mini-bar-legend-dot" style="background:#10b981"></div>Exact
+                        <div class="mini-bar-legend-dot" style="background:#10b981"></div>
+                        Exact
                     </div>
                     <div class="mini-bar-legend-item">
-                        <div class="mini-bar-legend-dot" style="background:#f59e0b"></div>Tendency
+                        <div class="mini-bar-legend-dot" style="background:#f59e0b"></div>
+                        Tendency
                     </div>
                     <div class="mini-bar-legend-item">
-                        <div class="mini-bar-legend-dot" style="background:#ef4444"></div>Wrong
+                        <div class="mini-bar-legend-dot" style="background:#ef4444"></div>
+                        Wrong
                     </div>
                 </div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Last Updated</div>
                 <div class="kpi-value" style="font-size:1.3rem"
-                     th:text="${lastPredictionRun != null ? lastPredictionRun : '—'}">—</div>
+                     th:text="${lastPredictionRun != null ? lastPredictionRun : '—'}">—
+                </div>
                 <div class="kpi-sub" th:if="${lastResultsFetched != null}"
                      th:text="'results: ' + ${lastResultsFetched}"></div>
                 <div class="kpi-sub" th:unless="${lastResultsFetched != null}">no results fetched yet</div>
