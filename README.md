@@ -5,7 +5,143 @@
 
 # AI Football Predictor
 
-A Spring Boot application that predicts football match scores using AI models (Anthropic, OpenAI). It fetches upcoming
-fixtures from the [football-data.org](https://www.football-data.org) API for supported competitions (Bundesliga, Premier
-League), sends them to one or more AI models for score predictions, and persists both the predictions and the actual
-results for later comparison.
+A Spring Boot application that predicts football match scores using multiple AI models (Anthropic Claude, OpenAI GPT,
+Mistral AI). Every night it fetches upcoming fixtures, collects recent news for each match, and sends the data to all
+configured AI models. Predictions and actual results are stored in PostgreSQL and presented in a Thymeleaf dashboard
+with model comparison charts.
+
+---
+
+## Features
+
+- **Multi-model predictions** — queries Anthropic, OpenAI, and Mistral in parallel and stores each model's prediction
+  separately
+- **News-enriched prompts** — fetches recent web/news results via Brave Search API to give the AI relevant context per
+  match
+- **Multi-competition support** — Premier League, Bundesliga, Primera División, Serie A, Ligue 1, UEFA Champions League,
+  Championship, Eredivisie, Primeira Liga, Copa Libertadores, Campeonato Brasileiro Série A (configurable)
+- **Automated daily pipeline** — predictions at 01:00, result scoring at 02:00 (Europe/Berlin)
+- **Scoring system** — 3 pts for exact score, 1 pt for correct tendency, 0 pts for wrong
+- **Dashboard** — upcoming matches with predictions and finished matches with actual results, plus accuracy and
+  performance charts per model
+
+---
+
+## Tech Stack
+
+| Layer          | Technology                                 |
+|----------------|--------------------------------------------|
+| Backend        | Java 25, Spring Boot 4.x                   |
+| AI             | Spring AI 2.x (Anthropic, OpenAI, Mistral) |
+| News           | Brave Search API                           |
+| Fixtures       | football-data.org API v4                   |
+| Database       | PostgreSQL 17                              |
+| Frontend       | Thymeleaf, Chart.js                        |
+| Observability  | Prometheus, Grafana, Grafana Alloy, Loki   |
+| Infrastructure | Docker Compose, Traefik v3 (TLS)           |
+
+---
+
+## How It Works
+
+```
+01:00 daily
+  └── Fetch upcoming fixtures (football-data.org)
+        └── Fetch news per match (Brave Search)
+              └── Build prompt (competition + news snippets + JSON template)
+                    └── Query all AI models (Anthropic / OpenAI / Mistral)
+                          └── Persist predictions (PostgreSQL)
+
+02:00 daily
+  └── Fetch finished matches (football-data.org)
+        └── Update actual scores + compute prediction points
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Java 25
+- Docker & Docker Compose
+- API keys for [football-data.org](https://www.football-data.org), [Brave Search](https://brave.com/search/api/), and at
+  least one AI provider
+
+### Local setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/e-reznik/ai-football-predictor.git
+   cd ai-football-predictor
+   ```
+
+2. Add your API keys to `src/main/resources/application.properties` (or create a local override file):
+   ```properties
+   football-data.token=YOUR_TOKEN
+   brave.api_key=YOUR_KEY
+   spring.ai.anthropic.api-key=YOUR_KEY
+   spring.ai.openai.api-key=YOUR_KEY
+   spring.ai.mistralai.api-key=YOUR_KEY
+   ```
+
+3. Start a local PostgreSQL instance (or use the provided Compose file):
+   ```bash
+   docker compose up db -d
+   ```
+
+4. Run the application:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+   The dashboard is available at [http://localhost:8081](http://localhost:8081).
+
+### Run with mock data (no API keys required)
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=mock
+```
+
+### Production deployment
+
+Copy `.env.example` to `.env`, fill in all variables, then:
+
+```bash
+docker compose up -d
+```
+
+---
+
+## Configuration Reference
+
+| Property                      | Description                                             |
+|-------------------------------|---------------------------------------------------------|
+| `football-data.token`         | football-data.org API token                             |
+| `football-data.competitions`  | Comma-separated competition codes (e.g. `BL1,PL,PD,SA`) |
+| `brave.api_key`               | Brave Search API key                                    |
+| `brave.suffix`                | Words appended to each news search query                |
+| `spring.ai.anthropic.api-key` | Anthropic API key                                       |
+| `spring.ai.openai.api-key`    | OpenAI API key                                          |
+| `spring.ai.mistralai.api-key` | Mistral AI API key                                      |
+| `app.api.token`               | Bearer token for `/predict` and `/result` endpoints     |
+| `ai.prompt.part.1`            | First part of the AI prompt (role instruction)          |
+| `ai.prompt.part.2`            | Second part (context instruction)                       |
+| `ai.prompt.part.3`            | Third part (output format instruction)                  |
+
+---
+
+## Dashboard
+
+**`GET /`** — Upcoming matches with AI predictions from all models. Includes bar and line charts comparing model
+accuracy and total points across competitions and matchdays.
+
+**`GET /history`** — Past matches with actual results, per-model predicted scores, and points earned.
+
+**`GET /about`** — Project description, scoring rules, covered leagues, and AI models in use.
+
+---
+
+## License
+
+This project is provided as-is for educational and personal use.
