@@ -2,6 +2,7 @@ package de.ereznik.aifootballpredictor.controller;
 
 import de.ereznik.aifootballpredictor.dto.dashboard.DashboardData;
 import de.ereznik.aifootballpredictor.service.AIService;
+import de.ereznik.aifootballpredictor.service.RandomPredictionService;
 import de.ereznik.aifootballpredictor.service.ScoreService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -54,7 +55,9 @@ public class ScoreController {
         model.addAttribute("totalGames", data.totalGames());
         model.addAttribute("lastPredictionRun", data.lastPredictionRun());
         model.addAttribute("lastResultsFetched", data.lastResultsFetched());
-        model.addAttribute("activeModels", aiService.getActiveModelNames());
+        List<String> activeModels = new ArrayList<>(aiService.getActiveModelNames());
+        activeModels.add(RandomPredictionService.MODEL_NAME);
+        model.addAttribute("activeModels", activeModels);
         return "index";
     }
 
