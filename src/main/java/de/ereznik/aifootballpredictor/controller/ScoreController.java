@@ -39,6 +39,8 @@ public class ScoreController {
         model.addAttribute("competitions", data.competitions());
         model.addAttribute("models", data.models());
         model.addAttribute("predictionCounts", data.predictionCountByModel());
+        model.addAttribute("scoredPredictionCounts", data.scoredPredictionCountByModel());
+        model.addAttribute("avgPointsPerGame", data.avgPointsPerGameByModel());
         model.addAttribute("barChartData", buildBarChartData(data));
         model.addAttribute("lineChartsData", buildLineChartsData(data));
         model.addAttribute("accuracyChartData", buildAccuracyChartData(data));

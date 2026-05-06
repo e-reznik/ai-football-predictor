@@ -30,6 +30,8 @@ public class ScoreService {
         Map<String, TreeMap<Integer, Map<String, Integer>>> byMatchday = new LinkedHashMap<>();
         Map<String, Map<String, Integer>> accuracy = new LinkedHashMap<>();
         Map<String, Integer> predictionCount = new LinkedHashMap<>();
+        Map<String, Integer> scoredCount = new LinkedHashMap<>();
+        Map<String, Integer> totalPoints = new LinkedHashMap<>();
         Set<String> allCompetitions = new LinkedHashSet<>();
         Set<String> allModels = new LinkedHashSet<>();
 
@@ -45,9 +47,17 @@ public class ScoreService {
             int matchday = p.getMatch().getGameDay();
             int score = p.getScore();
 
+            scoredCount.merge(model, 1, (a, b) -> a + b);
+            totalPoints.merge(model, score, (a, b) -> a + b);
             addTotal(totals, competition, model, score);
             addByMatchday(byMatchday, competition, matchday, model, score);
             addAccuracy(accuracy, model, score);
+        }
+
+        Map<String, Double> avgPointsPerGame = new LinkedHashMap<>();
+        for (String m : allModels) {
+            int scored = scoredCount.getOrDefault(m, 0);
+            avgPointsPerGame.put(m, scored > 0 ? (double) totalPoints.getOrDefault(m, 0) / scored : 0.0);
         }
 
         List<String> competitions = new ArrayList<>(allCompetitions);
@@ -68,8 +78,8 @@ public class ScoreService {
                 .map(m -> m.getUpdatedAt().format(ts))
                 .orElse(null);
 
-        return new DashboardData(competitions, models, totals, cumulative, accuracy, predictionCount, trackingSince,
-                totalGames, lastPredictionRun, lastResultsFetched);
+        return new DashboardData(competitions, models, totals, cumulative, accuracy, predictionCount, scoredCount,
+                avgPointsPerGame, trackingSince, totalGames, lastPredictionRun, lastResultsFetched);
     }
 
     private void addTotal(Map<String, Map<String, Integer>> totals, String competition, String model, int score) {

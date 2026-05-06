@@ -557,6 +557,8 @@
                     <tr>
                         <th>#</th>
                         <th>Model</th>
+                        <th>Predicted</th>
+                        <th>Avg pts/game</th>
                         <th>Total Pts</th>
                         <th>Exact (3pts)</th>
                         <th>Tendency (1pt)</th>
@@ -658,6 +660,8 @@
     const lineChartsData = /*[[${lineChartsData}]]*/ null;
     const competitions = /*[[${competitions}]]*/ [];
     const predictionCounts = /*[[${predictionCounts}]]*/ {};
+    const scoredPredictionCounts = /*[[${scoredPredictionCounts}]]*/ {};
+    const avgPointsPerGame = /*[[${avgPointsPerGame}]]*/ {};
     const models = /*[[${models}]]*/ [];
 
     // Chart.js global defaults
@@ -668,21 +672,17 @@
     const PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 
-    // KPI — leading model
-    if (barChartData) {
-        const totals = {};
-        models.forEach(m => totals[m] = 0);
-        barChartData.datasets.forEach(ds =>
-            ds.data.forEach((v, i) => totals[models[i]] = (totals[models[i]] || 0) + v)
-        );
-        const nonRandom = Object.entries(totals).filter(([m]) => m !== 'Random');
+    // KPI — leading model (by avg pts/game)
+    if (Object.keys(avgPointsPerGame).length) {
+        const nonRandom = Object.entries(avgPointsPerGame).filter(([m]) => m !== 'Random');
         const best = nonRandom.sort((a, b) => b[1] - a[1])[0];
         if (best) {
             document.getElementById('kpi-best-name').textContent = best[0].split('/').pop();
-            const randomPts = totals['Random'];
-            const sub = randomPts != null
-                ? best[1] + ' pts · Random: ' + randomPts + ' pts'
-                : best[1] + ' pts total';
+            const games = scoredPredictionCounts[best[0]] || 0;
+            const randomAvg = avgPointsPerGame['Random'];
+            const sub = randomAvg != null
+                ? best[1].toFixed(2) + ' pts/game · Random: ' + randomAvg.toFixed(2)
+                : best[1].toFixed(2) + ' pts/game · ' + games + ' games';
             document.getElementById('kpi-best-pts').textContent = sub;
         }
     }
@@ -726,17 +726,21 @@
                 wrong: accuracyChartData.datasets[2]?.data[i] ?? 0
             };
         });
-        const ranked = [...models].sort((a, b) => totalPts[b] - totalPts[a]);
+        const ranked = [...models].sort((a, b) => (avgPointsPerGame[b] || 0) - (avgPointsPerGame[a] || 0));
         const tbody = document.getElementById('rankingBody');
         const medals = ['rank-1', 'rank-2', 'rank-3'];
         ranked.forEach((m, idx) => {
             const rankClass = medals[idx] || '';
             const shortName = m.split('/').pop();
+            const avg = (avgPointsPerGame[m] || 0).toFixed(2);
+            const evaluated = scoredPredictionCounts[m] || 0;
             tbody.insertAdjacentHTML('beforeend', `
                 <tr>
                     <td class="${rankClass}">${idx + 1}</td>
                     <td class="team">${shortName}</td>
-                    <td class="pts-total">${totalPts[m]}</td>
+                    <td>${evaluated}</td>
+                    <td class="pts-total">${avg}</td>
+                    <td>${totalPts[m]}</td>
                     <td>${accData[m].exact}</td>
                     <td>${accData[m].tendency}</td>
                     <td>${accData[m].wrong}</td>
