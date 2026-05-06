@@ -290,6 +290,15 @@
             color: #475569;
         }
 
+        .badge-active {
+            background: #dcfce7;
+            color: #166534;
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
         .team {
             font-weight: 500;
             color: var(--text-primary);
@@ -662,6 +671,7 @@
     const predictionCounts = /*[[${predictionCounts}]]*/ {};
     const scoredPredictionCounts = /*[[${scoredPredictionCounts}]]*/ {};
     const avgPointsPerGame = /*[[${avgPointsPerGame}]]*/ {};
+    const activeModels = new Set(/*[[${activeModels}]]*/ []);
     const models = /*[[${models}]]*/ [];
 
     // Chart.js global defaults
@@ -734,10 +744,11 @@
             const shortName = m.split('/').pop();
             const avg = (avgPointsPerGame[m] || 0).toFixed(2);
             const evaluated = scoredPredictionCounts[m] || 0;
+            const activeBadge = activeModels.has(m) ? '<span class="badge badge-active">active</span>' : '';
             tbody.insertAdjacentHTML('beforeend', `
                 <tr>
                     <td class="${rankClass}">${idx + 1}</td>
-                    <td class="team">${shortName}</td>
+                    <td class="team">${shortName}${activeBadge}</td>
                     <td>${evaluated}</td>
                     <td class="pts-total">${avg}</td>
                     <td>${totalPts[m]}</td>

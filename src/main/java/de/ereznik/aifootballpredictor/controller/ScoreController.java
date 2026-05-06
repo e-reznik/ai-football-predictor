@@ -1,6 +1,7 @@
 package de.ereznik.aifootballpredictor.controller;
 
 import de.ereznik.aifootballpredictor.dto.dashboard.DashboardData;
+import de.ereznik.aifootballpredictor.service.AIService;
 import de.ereznik.aifootballpredictor.service.ScoreService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,9 +15,11 @@ import java.util.Map;
 @Controller
 public class ScoreController {
     private final ScoreService scoreService;
+    private final AIService aiService;
 
-    public ScoreController(ScoreService scoreService) {
+    public ScoreController(ScoreService scoreService, AIService aiService) {
         this.scoreService = scoreService;
+        this.aiService = aiService;
     }
 
     @GetMapping("/about")
@@ -51,6 +54,7 @@ public class ScoreController {
         model.addAttribute("totalGames", data.totalGames());
         model.addAttribute("lastPredictionRun", data.lastPredictionRun());
         model.addAttribute("lastResultsFetched", data.lastResultsFetched());
+        model.addAttribute("activeModels", aiService.getActiveModelNames());
         return "index";
     }
 

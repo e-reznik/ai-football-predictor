@@ -44,6 +44,12 @@ public class AIService {
                 .toList());
     }
 
+    public List<String> getActiveModelNames() {
+        return chatModels.stream()
+                .map(m -> m.getDefaultOptions().getModel())
+                .toList();
+    }
+
     public Map<Competition, String> createPrompts(NewsPerMatchPerCompetition newsPerMatchPerCompetition) {
         Map<Competition, String> promptsPerCompetition = new HashMap<>();
 
