@@ -1,7 +1,14 @@
 [![Java CI with Maven](https://github.com/e-reznik/ai-football-predictor/actions/workflows/maven.yml/badge.svg)](https://github.com/e-reznik/ai-football-predictor/actions/workflows/maven.yml)
 [![Deploy to vServer](https://github.com/e-reznik/ai-football-predictor/actions/workflows/deploy.yml/badge.svg)](https://github.com/e-reznik/ai-football-predictor/actions/workflows/deploy.yml)
-![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.x-brightgreen?logo=springboot)
+![Last Commit](https://img.shields.io/github/last-commit/e-reznik/ai-football-predictor)
+
+![Java](https://img.shields.io/badge/Java-25-5382A1?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.x-6DB33F?logo=springboot&logoColor=white)
+![Spring AI](https://img.shields.io/badge/Spring%20AI-2.x-6DB33F?logo=spring&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
+
+
 
 # AI Football Predictor
 
@@ -26,19 +33,17 @@ with model comparison charts.
   performance charts per model
 
 ---
-
 ## Tech Stack
 
-| Layer          | Technology                                 |
-|----------------|--------------------------------------------|
-| Backend        | Java 25, Spring Boot 4.x                   |
-| AI             | Spring AI 2.x (Anthropic, OpenAI, Mistral) |
-| News           | Brave Search API                           |
-| Fixtures       | football-data.org API v4                   |
-| Database       | PostgreSQL 17                              |
-| Frontend       | Thymeleaf, Chart.js                        |
-| Observability  | Prometheus, Grafana, Grafana Alloy, Loki   |
-| Infrastructure | Docker Compose, Traefik v3 (TLS)           |
+| Layer | Technology |
+|---|---|
+| Backend | Java 25, Spring Boot 4.x |
+| AI | Spring AI 2.x, Anthropic Claude, OpenAI GPT, Mistral AI |
+| External APIs | [Brave Search API](https://brave.com/search/api/), [football-data.org API](https://www.football-data.org/) |
+| Database | PostgreSQL 17 |
+| Frontend | Thymeleaf, Chart.js |
+| Observability | Prometheus, Grafana, Grafana Alloy, Loki |
+| Infrastructure | Docker Compose, Traefik v3, TLS/HTTPS |
 
 ---
 
