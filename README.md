@@ -149,4 +149,4 @@ accuracy and total points across competitions and matchdays.
 
 ## License
 
-This project is provided as-is for educational and personal use.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
