@@ -336,6 +336,53 @@
             padding: 10px 14px;
         }
 
+        .ranking-table th {
+            user-select: none;
+        }
+
+        .ranking-table th.sortable {
+            padding: 0;
+        }
+
+        .ranking-table th.sortable button {
+            width: 100%;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 14px;
+            border: 0;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            text-transform: inherit;
+            letter-spacing: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .ranking-table th.sortable button:hover,
+        .ranking-table th.sortable button:focus-visible {
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .ranking-table th.sortable button::after {
+            content: "↕";
+            font-size: 0.66rem;
+            color: #cbd5e1;
+        }
+
+        .ranking-table th.sortable[data-sort-dir="asc"] button::after {
+            content: "↑";
+            color: var(--accent);
+        }
+
+        .ranking-table th.sortable[data-sort-dir="desc"] button::after {
+            content: "↓";
+            color: var(--accent);
+        }
+
         .ranking-table tbody td:first-child {
             font-weight: 700;
             color: var(--text-secondary);
@@ -565,13 +612,13 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Model</th>
-                        <th>Predicted</th>
-                        <th>Avg pts/game</th>
-                        <th>Total Pts</th>
-                        <th>Exact (3pts)</th>
-                        <th>Tendency (1pt)</th>
-                        <th>Wrong (0pts)</th>
+                        <th class="sortable" data-sort-key="model"><button type="button">Model</button></th>
+                        <th class="sortable" data-sort-key="predicted"><button type="button">Predicted</button></th>
+                        <th class="sortable" data-sort-key="avg"><button type="button">Avg pts/game</button></th>
+                        <th class="sortable" data-sort-key="total"><button type="button">Total Pts</button></th>
+                        <th class="sortable" data-sort-key="exact"><button type="button">Exact (3pts)</button></th>
+                        <th class="sortable" data-sort-key="tendency"><button type="button">Tendency (1pt)</button></th>
+                        <th class="sortable" data-sort-key="wrong"><button type="button">Wrong (0pts)</button></th>
                     </tr>
                     </thead>
                     <tbody id="rankingBody"></tbody>
@@ -736,27 +783,79 @@
                 wrong: accuracyChartData.datasets[2]?.data[i] ?? 0
             };
         });
-        const ranked = [...models].sort((a, b) => (avgPointsPerGame[b] || 0) - (avgPointsPerGame[a] || 0));
+        const rankingRows = models.map(m => ({
+            model: m,
+            shortName: m.split('/').pop(),
+            predicted: scoredPredictionCounts[m] || 0,
+            avg: avgPointsPerGame[m] || 0,
+            total: totalPts[m] || 0,
+            exact: accData[m].exact,
+            tendency: accData[m].tendency,
+            wrong: accData[m].wrong,
+            active: activeModels.has(m)
+        }));
+        const rankingSort = {key: 'avg', dir: 'desc'};
         const tbody = document.getElementById('rankingBody');
         const medals = ['rank-1', 'rank-2', 'rank-3'];
-        ranked.forEach((m, idx) => {
-            const rankClass = medals[idx] || '';
-            const shortName = m.split('/').pop();
-            const avg = (avgPointsPerGame[m] || 0).toFixed(2);
-            const evaluated = scoredPredictionCounts[m] || 0;
-            const activeBadge = activeModels.has(m) ? '<span class="badge badge-active">active</span>' : '';
-            tbody.insertAdjacentHTML('beforeend', `
+
+        function compareRankingRows(a, b) {
+            const key = rankingSort.key;
+            const dir = rankingSort.dir === 'asc' ? 1 : -1;
+            const aVal = a[key];
+            const bVal = b[key];
+            let result;
+            if (typeof aVal === 'string' || typeof bVal === 'string') {
+                result = String(aVal).localeCompare(String(bVal), undefined, {sensitivity: 'base'});
+            } else {
+                result = (aVal ?? 0) - (bVal ?? 0);
+            }
+            return result === 0
+                ? b.avg - a.avg || b.total - a.total || a.shortName.localeCompare(b.shortName)
+                : result * dir;
+        }
+
+        function updateRankingSortHeaders() {
+            document.querySelectorAll('#rankingTable th.sortable').forEach(th => {
+                const isActive = th.dataset.sortKey === rankingSort.key;
+                th.dataset.sortDir = isActive ? rankingSort.dir : '';
+                th.setAttribute('aria-sort', isActive ? (rankingSort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
+            });
+        }
+
+        function renderRankingTable() {
+            tbody.innerHTML = '';
+            [...rankingRows].sort(compareRankingRows).forEach((row, idx) => {
+                const rankClass = medals[idx] || '';
+                const activeBadge = row.active ? '<span class="badge badge-active">active</span>' : '';
+                tbody.insertAdjacentHTML('beforeend', `
                 <tr>
                     <td class="${rankClass}">${idx + 1}</td>
-                    <td class="team">${shortName}${activeBadge}</td>
-                    <td>${evaluated}</td>
-                    <td class="pts-total">${avg}</td>
-                    <td>${totalPts[m]}</td>
-                    <td>${accData[m].exact}</td>
-                    <td>${accData[m].tendency}</td>
-                    <td>${accData[m].wrong}</td>
+                    <td class="team">${row.shortName}${activeBadge}</td>
+                    <td>${row.predicted}</td>
+                    <td class="pts-total">${row.avg.toFixed(2)}</td>
+                    <td>${row.total}</td>
+                    <td>${row.exact}</td>
+                    <td>${row.tendency}</td>
+                    <td>${row.wrong}</td>
                 </tr>`);
+            });
+            updateRankingSortHeaders();
+        }
+
+        document.querySelectorAll('#rankingTable th.sortable button').forEach(button => {
+            button.addEventListener('click', () => {
+                const key = button.closest('th').dataset.sortKey;
+                if (rankingSort.key === key) {
+                    rankingSort.dir = rankingSort.dir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    rankingSort.key = key;
+                    rankingSort.dir = key === 'model' ? 'asc' : 'desc';
+                }
+                renderRankingTable();
+            });
         });
+
+        renderRankingTable();
     }
 
     // Total points bar chart
