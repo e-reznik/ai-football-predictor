@@ -45,18 +45,22 @@ public class ScoreController {
         model.addAttribute("predictionCounts", data.predictionCountByModel());
         model.addAttribute("scoredPredictionCounts", data.scoredPredictionCountByModel());
         model.addAttribute("avgPointsPerGame", data.avgPointsPerGameByModel());
+        List<String> activeModels = new ArrayList<>(aiService.getActiveModelNames());
+        activeModels.add(RandomPredictionService.MODEL_NAME);
         model.addAttribute("barChartData", buildBarChartData(data));
         model.addAttribute("lineChartsData", buildLineChartsData(data));
         model.addAttribute("accuracyChartData", buildAccuracyChartData(data));
+        model.addAttribute("leaderboardStats", buildLeaderboardStats(data, activeModels));
+        model.addAttribute("leaderboardCompetitions", new ArrayList<>(data.totalByCompetitionAndModel().keySet()));
         model.addAttribute("upcomingMatches", scoreService.getUpcomingMatches());
         model.addAttribute("trackingSince", data.trackingSince());
         int totalPredictions = data.predictionCountByModel().values().stream().mapToInt(i -> i).sum();
+        int totalScoredPredictions = data.scoredPredictionCountByModel().values().stream().mapToInt(i -> i).sum();
         model.addAttribute("totalPredictions", totalPredictions);
+        model.addAttribute("hasScoredPredictions", totalScoredPredictions > 0);
         model.addAttribute("totalGames", data.totalGames());
         model.addAttribute("lastPredictionRun", data.lastPredictionRun());
         model.addAttribute("lastResultsFetched", data.lastResultsFetched());
-        List<String> activeModels = new ArrayList<>(aiService.getActiveModelNames());
-        activeModels.add(RandomPredictionService.MODEL_NAME);
         model.addAttribute("activeModels", activeModels);
         return "index";
     }
@@ -85,6 +89,64 @@ public class ScoreController {
                 Map.of("label", "Correct tendency (1pt)", "data", tendency, "backgroundColor", "rgba(255,200,64,0.8)"),
                 Map.of("label", "Wrong (0pts)", "data", wrong, "backgroundColor", "rgba(220,80,80,0.8)")
         ));
+    }
+
+    private Map<String, Object> buildLeaderboardStats(DashboardData data, List<String> activeModels) {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        List<String> leaderboardModels = new ArrayList<>(data.models());
+        for (String activeModel : activeModels) {
+            if (!leaderboardModels.contains(activeModel)) {
+                leaderboardModels.add(activeModel);
+            }
+        }
+        stats.put("ALL", buildLeaderboardRows(
+                leaderboardModels,
+                data.scoredPredictionCountByModel(),
+                data.avgPointsPerGameByModel(),
+                data.totalByCompetitionAndModel().values().stream().reduce(new LinkedHashMap<>(), (totals, competitionTotals) -> {
+                    competitionTotals.forEach((model, points) -> totals.merge(model, points, Integer::sum));
+                    return totals;
+                }),
+                data.accuracyByModel()
+        ));
+        for (String competition : data.totalByCompetitionAndModel().keySet()) {
+            Map<String, Integer> scoredCounts = data.scoredCountByCompetitionAndModel().getOrDefault(competition, Map.of());
+            Map<String, Integer> totals = data.totalByCompetitionAndModel().getOrDefault(competition, Map.of());
+            Map<String, Double> avgPoints = new LinkedHashMap<>();
+            for (String model : leaderboardModels) {
+                int scored = scoredCounts.getOrDefault(model, 0);
+                avgPoints.put(model, scored > 0 ? (double) totals.getOrDefault(model, 0) / scored : 0.0);
+            }
+            stats.put(competition, buildLeaderboardRows(
+                    leaderboardModels,
+                    scoredCounts,
+                    avgPoints,
+                    totals,
+                    data.accuracyByCompetitionAndModel().getOrDefault(competition, Map.of())
+            ));
+        }
+        return stats;
+    }
+
+    private Map<String, Object> buildLeaderboardRows(List<String> models,
+                                                     Map<String, Integer> scoredCounts,
+                                                     Map<String, Double> avgPoints,
+                                                     Map<String, Integer> totals,
+                                                     Map<String, Map<String, Integer>> accuracy) {
+        Map<String, Object> rows = new LinkedHashMap<>();
+        for (String model : models) {
+            int predicted = scoredCounts.getOrDefault(model, 0);
+            Map<String, Integer> modelAccuracy = accuracy.getOrDefault(model, Map.of());
+            rows.put(model, Map.of(
+                    "predicted", predicted,
+                    "avg", avgPoints.getOrDefault(model, 0.0),
+                    "total", totals.getOrDefault(model, 0),
+                    "exact", modelAccuracy.getOrDefault("exact", 0),
+                    "tendency", modelAccuracy.getOrDefault("tendency", 0),
+                    "wrong", modelAccuracy.getOrDefault("wrong", 0)
+            ));
+        }
+        return rows;
     }
 
     private Map<String, Object> buildLineChartsData(DashboardData data) {

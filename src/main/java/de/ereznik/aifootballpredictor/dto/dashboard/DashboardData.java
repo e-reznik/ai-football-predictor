@@ -7,6 +7,8 @@ public record DashboardData(
         List<String> competitions,
         List<String> models,
         Map<String, Map<String, Integer>> totalByCompetitionAndModel,
+        Map<String, Map<String, Integer>> scoredCountByCompetitionAndModel,
+        Map<String, Map<String, Map<String, Integer>>> accuracyByCompetitionAndModel,
         Map<String, Map<Integer, Map<String, Integer>>> cumulativeByCompetitionAndMatchday,
         Map<String, Map<String, Integer>> accuracyByModel,
         Map<String, Integer> predictionCountByModel,

@@ -27,6 +27,8 @@ public class ScoreService {
         Iterable<PredictionEntity> all = predictionRepository.findAll();
 
         Map<String, Map<String, Integer>> totals = new LinkedHashMap<>();
+        Map<String, Map<String, Integer>> scoredCountByCompetition = new LinkedHashMap<>();
+        Map<String, Map<String, Map<String, Integer>>> accuracyByCompetition = new LinkedHashMap<>();
         Map<String, TreeMap<Integer, Map<String, Integer>>> byMatchday = new LinkedHashMap<>();
         Map<String, Map<String, Integer>> accuracy = new LinkedHashMap<>();
         Map<String, Integer> predictionCount = new LinkedHashMap<>();
@@ -50,8 +52,10 @@ public class ScoreService {
             scoredCount.merge(model, 1, (a, b) -> a + b);
             totalPoints.merge(model, score, (a, b) -> a + b);
             addTotal(totals, competition, model, score);
+            addScoredCount(scoredCountByCompetition, competition, model);
             addByMatchday(byMatchday, competition, matchday, model, score);
             addAccuracy(accuracy, model, score);
+            addAccuracy(accuracyByCompetition, competition, model, score);
         }
 
         Map<String, Double> avgPointsPerGame = new LinkedHashMap<>();
@@ -78,13 +82,19 @@ public class ScoreService {
                 .map(m -> m.getUpdatedAt().format(ts))
                 .orElse(null);
 
-        return new DashboardData(competitions, models, totals, cumulative, accuracy, predictionCount, scoredCount,
+        return new DashboardData(competitions, models, totals, scoredCountByCompetition, accuracyByCompetition,
+                cumulative, accuracy, predictionCount, scoredCount,
                 avgPointsPerGame, trackingSince, totalGames, lastPredictionRun, lastResultsFetched);
     }
 
     private void addTotal(Map<String, Map<String, Integer>> totals, String competition, String model, int score) {
         totals.computeIfAbsent(competition, k -> new LinkedHashMap<>())
                 .merge(model, score, (a, b) -> a + b);
+    }
+
+    private void addScoredCount(Map<String, Map<String, Integer>> scoredCountByCompetition, String competition, String model) {
+        scoredCountByCompetition.computeIfAbsent(competition, k -> new LinkedHashMap<>())
+                .merge(model, 1, (a, b) -> a + b);
     }
 
     private void addByMatchday(Map<String, TreeMap<Integer, Map<String, Integer>>> byMatchday,
@@ -101,6 +111,18 @@ public class ScoreService {
             default -> "wrong";
         };
         accuracy.computeIfAbsent(model, k -> new LinkedHashMap<>(Map.of("exact", 0, "tendency", 0, "wrong", 0)))
+                .merge(bucket, 1, (a, b) -> a + b);
+    }
+
+    private void addAccuracy(Map<String, Map<String, Map<String, Integer>>> accuracyByCompetition,
+                             String competition, String model, int score) {
+        String bucket = switch (score) {
+            case 3 -> "exact";
+            case 1 -> "tendency";
+            default -> "wrong";
+        };
+        accuracyByCompetition.computeIfAbsent(competition, k -> new LinkedHashMap<>())
+                .computeIfAbsent(model, k -> new LinkedHashMap<>(Map.of("exact", 0, "tendency", 0, "wrong", 0)))
                 .merge(bucket, 1, (a, b) -> a + b);
     }
 

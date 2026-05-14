@@ -364,7 +364,9 @@
         .ranking-table th.sortable button:hover,
         .ranking-table th.sortable button:focus-visible {
             color: var(--text-primary);
-            outline: none;
+            background: #eef2ff;
+            outline: 2px solid rgba(99, 102, 241, 0.35);
+            outline-offset: -2px;
         }
 
         .ranking-table th.sortable button::after {
@@ -398,6 +400,36 @@
             font-weight: 700;
             font-variant-numeric: tabular-nums;
             color: var(--accent);
+        }
+
+        .leaderboard-controls {
+            display: flex;
+            justify-content: flex-end;
+            margin: -8px 0 14px;
+        }
+
+        .leaderboard-filter {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .leaderboard-filter select {
+            min-width: 170px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text-primary);
+            padding: 7px 30px 7px 10px;
+            font: inherit;
+        }
+
+        .leaderboard-filter select:focus-visible {
+            outline: 2px solid rgba(99, 102, 241, 0.35);
+            outline-offset: 2px;
         }
 
         /* ── Empty state ─────────────────────────────────────── */
@@ -602,33 +634,64 @@
 
         <!-- Model Ranking -->
         <div class="section-label">Model Ranking</div>
-        <div class="card">
+        <div class="card" th:if="${hasScoredPredictions}">
             <div class="card-header">
                 <div class="card-icon icon-amber">🥇</div>
                 <div class="card-title">Leaderboard</div>
+            </div>
+            <div class="leaderboard-controls">
+                <label class="leaderboard-filter" for="leaderboardCompetition">
+                    Competition
+                    <select id="leaderboardCompetition">
+                        <option value="ALL">All competitions</option>
+                        <option th:each="competition : ${leaderboardCompetitions}"
+                                th:value="${competition}"
+                                th:text="${competition}"></option>
+                    </select>
+                </label>
             </div>
             <div class="table-wrap">
                 <table class="ranking-table" id="rankingTable">
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th class="sortable" data-sort-key="model"><button type="button">Model</button></th>
-                        <th class="sortable" data-sort-key="predicted"><button type="button">Predicted</button></th>
-                        <th class="sortable" data-sort-key="avg"><button type="button">Avg pts/game</button></th>
-                        <th class="sortable" data-sort-key="total"><button type="button">Total Pts</button></th>
-                        <th class="sortable" data-sort-key="exact"><button type="button">Exact (3pts)</button></th>
-                        <th class="sortable" data-sort-key="tendency"><button type="button">Tendency (1pt)</button></th>
-                        <th class="sortable" data-sort-key="wrong"><button type="button">Wrong (0pts)</button></th>
+                        <th class="sortable" data-sort-key="model">
+                            <button type="button">Model</button>
+                        </th>
+                        <th class="sortable" data-sort-key="predicted">
+                            <button type="button">Predicted</button>
+                        </th>
+                        <th class="sortable" data-sort-key="avg">
+                            <button type="button">Avg pts/game</button>
+                        </th>
+                        <th class="sortable" data-sort-key="total">
+                            <button type="button">Total Pts</button>
+                        </th>
+                        <th class="sortable" data-sort-key="exact">
+                            <button type="button">Exact (3pts)</button>
+                        </th>
+                        <th class="sortable" data-sort-key="tendency">
+                            <button type="button">Tendency (1pt)</button>
+                        </th>
+                        <th class="sortable" data-sort-key="wrong">
+                            <button type="button">Wrong (0pts)</button>
+                        </th>
                     </tr>
                     </thead>
                     <tbody id="rankingBody"></tbody>
                 </table>
             </div>
         </div>
+        <div class="card" th:unless="${hasScoredPredictions}">
+            <div class="empty" style="padding: 36px 24px;">
+                <div class="empty-title">No scored matches yet</div>
+                <div class="empty-sub">Leaderboard rankings appear after results have been fetched.</div>
+            </div>
+        </div>
 
         <!-- Performance charts -->
         <div class="section-label">Performance</div>
-        <div class="chart-grid">
+        <div class="chart-grid" th:if="${hasScoredPredictions}">
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon icon-blue">🏆</div>
@@ -644,10 +707,16 @@
                 <canvas id="accuracyChart" style="max-height:260px"></canvas>
             </div>
         </div>
+        <div class="card" th:unless="${hasScoredPredictions}">
+            <div class="empty" style="padding: 36px 24px;">
+                <div class="empty-title">No scored matches yet</div>
+                <div class="empty-sub">Performance charts need completed fixtures with saved scores.</div>
+            </div>
+        </div>
 
         <!-- Trend charts -->
-        <div class="section-label section-toggle" id="trendsToggle">Trends</div>
-        <div class="collapsible-content" id="trendsContent">
+        <div class="section-label section-toggle" id="trendsToggle" th:if="${hasScoredPredictions}">Trends</div>
+        <div class="collapsible-content" id="trendsContent" th:if="${hasScoredPredictions}">
             <div class="chart-grid">
                 <div class="card" th:each="comp : ${competitions}">
                     <div class="card-header">
@@ -718,13 +787,17 @@
     const predictionCounts = /*[[${predictionCounts}]]*/ {};
     const scoredPredictionCounts = /*[[${scoredPredictionCounts}]]*/ {};
     const avgPointsPerGame = /*[[${avgPointsPerGame}]]*/ {};
+    const hasScoredPredictions = /*[[${hasScoredPredictions}]]*/ false;
+    const leaderboardStats = /*[[${leaderboardStats}]]*/ {};
     const activeModels = new Set(/*[[${activeModels}]]*/ []);
     const models = /*[[${models}]]*/ [];
 
     // Chart.js global defaults
-    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
-    Chart.defaults.font.size = 12;
-    Chart.defaults.color = '#64748b';
+    if (window.Chart) {
+        Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#64748b';
+    }
 
     const PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -769,34 +842,35 @@
     }
 
     // Model Ranking table
-    if (barChartData && accuracyChartData) {
-        const totalPts = {};
-        models.forEach(m => totalPts[m] = 0);
-        barChartData.datasets.forEach(ds =>
-            ds.data.forEach((v, i) => totalPts[models[i]] = (totalPts[models[i]] || 0) + v)
-        );
-        const accData = {};
-        models.forEach((m, i) => {
-            accData[m] = {
-                exact: accuracyChartData.datasets[0]?.data[i] ?? 0,
-                tendency: accuracyChartData.datasets[1]?.data[i] ?? 0,
-                wrong: accuracyChartData.datasets[2]?.data[i] ?? 0
-            };
-        });
-        const rankingRows = models.map(m => ({
-            model: m,
-            shortName: m.split('/').pop(),
-            predicted: scoredPredictionCounts[m] || 0,
-            avg: avgPointsPerGame[m] || 0,
-            total: totalPts[m] || 0,
-            exact: accData[m].exact,
-            tendency: accData[m].tendency,
-            wrong: accData[m].wrong,
-            active: activeModels.has(m)
-        }));
+    if (hasScoredPredictions && leaderboardStats) {
         const rankingSort = {key: 'avg', dir: 'desc'};
         const tbody = document.getElementById('rankingBody');
+        const competitionSelect = document.getElementById('leaderboardCompetition');
         const medals = ['rank-1', 'rank-2', 'rank-3'];
+        if (tbody) {
+        let rankingRows = [];
+        let rankByModel = new Map();
+
+        function setRankingRows() {
+            const selectedCompetition = competitionSelect?.value || 'ALL';
+            const stats = leaderboardStats[selectedCompetition] || {};
+            rankingRows = Object.entries(stats).map(([model, values]) => ({
+                model,
+                shortName: model.split('/').pop(),
+                predicted: values.predicted || 0,
+                avg: values.avg || 0,
+                total: values.total || 0,
+                exact: values.exact || 0,
+                tendency: values.tendency || 0,
+                wrong: values.wrong || 0,
+                active: activeModels.has(model)
+            }));
+            rankByModel = new Map(
+                [...rankingRows]
+                    .sort((a, b) => b.avg - a.avg || b.total - a.total || a.shortName.localeCompare(b.shortName))
+                    .map((row, idx) => [row.model, idx + 1])
+            );
+        }
 
         function compareRankingRows(a, b) {
             const key = rankingSort.key;
@@ -823,21 +897,41 @@
         }
 
         function renderRankingTable() {
+            setRankingRows();
             tbody.innerHTML = '';
             [...rankingRows].sort(compareRankingRows).forEach((row, idx) => {
-                const rankClass = medals[idx] || '';
-                const activeBadge = row.active ? '<span class="badge badge-active">active</span>' : '';
-                tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td class="${rankClass}">${idx + 1}</td>
-                    <td class="team">${row.shortName}${activeBadge}</td>
-                    <td>${row.predicted}</td>
-                    <td class="pts-total">${row.avg.toFixed(2)}</td>
-                    <td>${row.total}</td>
-                    <td>${row.exact}</td>
-                    <td>${row.tendency}</td>
-                    <td>${row.wrong}</td>
-                </tr>`);
+                const stableRank = rankByModel.get(row.model) || idx + 1;
+                const tr = document.createElement('tr');
+                const rankCell = document.createElement('td');
+                rankCell.textContent = stableRank;
+                rankCell.className = medals[stableRank - 1] || '';
+                tr.appendChild(rankCell);
+
+                const modelCell = document.createElement('td');
+                modelCell.className = 'team';
+                modelCell.appendChild(document.createTextNode(row.shortName));
+                if (row.active) {
+                    const activeBadge = document.createElement('span');
+                    activeBadge.className = 'badge badge-active';
+                    activeBadge.textContent = 'active';
+                    modelCell.appendChild(activeBadge);
+                }
+                tr.appendChild(modelCell);
+
+                [
+                    row.predicted,
+                    row.avg.toFixed(2),
+                    row.total,
+                    row.exact,
+                    row.tendency,
+                    row.wrong
+                ].forEach((value, valueIndex) => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    if (valueIndex === 1) cell.className = 'pts-total';
+                    tr.appendChild(cell);
+                });
+                tbody.appendChild(tr);
             });
             updateRankingSortHeaders();
         }
@@ -854,12 +948,16 @@
                 renderRankingTable();
             });
         });
+        if (competitionSelect) {
+            competitionSelect.addEventListener('change', renderRankingTable);
+        }
 
         renderRankingTable();
+        }
     }
 
     // Total points bar chart
-    if (barChartData) {
+    if (hasScoredPredictions && window.Chart && barChartData && document.getElementById('totalChart')) {
         barChartData.datasets.forEach((ds, i) => {
             ds.backgroundColor = PALETTE[i % PALETTE.length];
             ds.borderRadius = 6;
@@ -880,7 +978,7 @@
     }
 
     // Accuracy stacked bar chart
-    if (accuracyChartData) {
+    if (hasScoredPredictions && window.Chart && accuracyChartData && document.getElementById('accuracyChart')) {
         const accColors = ['#10b981', '#f59e0b', '#ef4444'];
         accuracyChartData.datasets.forEach((ds, i) => {
             ds.backgroundColor = accColors[i];
@@ -963,7 +1061,7 @@
     })();
 
     // Cumulative line charts
-    competitions.forEach(comp => {
+    if (hasScoredPredictions && window.Chart && lineChartsData) competitions.forEach(comp => {
         const canvas = document.getElementById('lineChart-' + comp);
         if (!canvas || !lineChartsData[comp]) return;
         lineChartsData[comp].datasets.forEach((ds, i) => {
