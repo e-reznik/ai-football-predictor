@@ -7,6 +7,7 @@ public record UpcomingMatchView(
         int gameDay,
         String homeTeam,
         String awayTeam,
+        ConsensusPredictionView consensusPrediction,
         Map<String, String> predictionsByModel,
         Map<String, Integer> probabilitiesByModel
 ) {

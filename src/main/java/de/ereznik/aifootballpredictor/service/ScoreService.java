@@ -1,5 +1,6 @@
 package de.ereznik.aifootballpredictor.service;
 
+import de.ereznik.aifootballpredictor.dto.dashboard.ConsensusPredictionView;
 import de.ereznik.aifootballpredictor.dto.dashboard.DashboardData;
 import de.ereznik.aifootballpredictor.dto.dashboard.PastMatchView;
 import de.ereznik.aifootballpredictor.dto.dashboard.UpcomingMatchView;
@@ -202,6 +203,7 @@ public class ScoreService {
                         match.getGameDay(),
                         match.getTeamHome(),
                         match.getTeamAway(),
+                        buildConsensusPrediction(match.getPredictions()),
                         predictions,
                         probabilities
                 ));
@@ -209,5 +211,52 @@ public class ScoreService {
         }
         result.sort((a, b) -> !a.competition().equals(b.competition()) ? a.competition().compareTo(b.competition()) : Integer.compare(a.gameDay(), b.gameDay()));
         return result;
+    }
+
+    private ConsensusPredictionView buildConsensusPrediction(List<PredictionEntity> predictions) {
+        List<PredictionEntity> weightedPredictions = predictions.stream()
+                .filter(p -> !RandomPredictionService.MODEL_NAME.equals(p.getPredictionModel()))
+                .filter(p -> p.getHomeGoalsPredicted() != null && p.getAwayGoalsPredicted() != null)
+                .filter(p -> p.getProbability() != null && p.getProbability() > 0)
+                .toList();
+
+        if (weightedPredictions.isEmpty()) {
+            return null;
+        }
+
+        int totalWeight = weightedPredictions.stream().mapToInt(PredictionEntity::getProbability).sum();
+        double weightedHomeGoals = weightedPredictions.stream()
+                .mapToDouble(p -> p.getHomeGoalsPredicted() * p.getProbability())
+                .sum() / totalWeight;
+        double weightedAwayGoals = weightedPredictions.stream()
+                .mapToDouble(p -> p.getAwayGoalsPredicted() * p.getProbability())
+                .sum() / totalWeight;
+
+        String outcome = outcomeLabel(weightedHomeGoals, weightedAwayGoals);
+        int agreeingModels = (int) weightedPredictions.stream()
+                .filter(p -> outcome.equals(outcomeLabel(p.getHomeGoalsPredicted(), p.getAwayGoalsPredicted())))
+                .count();
+        int averageConfidence = (int) Math.round(weightedPredictions.stream()
+                .mapToInt(PredictionEntity::getProbability)
+                .average()
+                .orElse(0) * 10);
+
+        return new ConsensusPredictionView(
+                String.format(Locale.US, "%.1f - %.1f", weightedHomeGoals, weightedAwayGoals),
+                outcome,
+                averageConfidence,
+                agreeingModels,
+                weightedPredictions.size()
+        );
+    }
+
+    private String outcomeLabel(double homeGoals, double awayGoals) {
+        if (homeGoals > awayGoals) {
+            return "Home win";
+        }
+        if (awayGoals > homeGoals) {
+            return "Away win";
+        }
+        return "Draw";
     }
 }
