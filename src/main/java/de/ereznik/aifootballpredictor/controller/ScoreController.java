@@ -162,8 +162,17 @@ public class ScoreController {
             List<Map<String, Object>> datasets = new ArrayList<>();
             int j = 0;
             for (String m : data.models()) {
-                List<Integer> values = matchdays.stream().map(day -> cumulative.get(day).getOrDefault(m, 0)).toList();
-                datasets.add(Map.of("label", m, "data", values, "borderColor", colors[j++ % colors.length], "tension", 0.3, "fill", false));
+                List<Integer> values = matchdays.stream()
+                        .map(day -> cumulative.get(day).get(m))
+                        .toList();
+                datasets.add(Map.of(
+                        "label", m,
+                        "data", values,
+                        "borderColor", colors[j++ % colors.length],
+                        "tension", 0.3,
+                        "fill", false,
+                        "spanGaps", false
+                ));
             }
             lineCharts.put(comp, Map.of("labels", matchdays, "datasets", datasets));
         }

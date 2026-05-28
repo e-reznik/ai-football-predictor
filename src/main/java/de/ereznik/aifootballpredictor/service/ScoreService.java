@@ -136,10 +136,15 @@ public class ScoreService {
             Map<Integer, Map<String, Integer>> cumulativeMatchdays = new LinkedHashMap<>();
             Map<String, Integer> running = new HashMap<>();
             for (Map.Entry<Integer, Map<String, Integer>> entry : byMatchday.get(comp).entrySet()) {
+                Map<String, Integer> cumulativeForMatchday = new LinkedHashMap<>();
                 for (String model : models) {
-                    running.merge(model, entry.getValue().getOrDefault(model, 0), (a, b) -> a + b);
+                    Integer score = entry.getValue().get(model);
+                    if (score != null) {
+                        running.merge(model, score, (a, b) -> a + b);
+                        cumulativeForMatchday.put(model, running.get(model));
+                    }
                 }
-                cumulativeMatchdays.put(entry.getKey(), new LinkedHashMap<>(running));
+                cumulativeMatchdays.put(entry.getKey(), cumulativeForMatchday);
             }
             cumulative.put(comp, cumulativeMatchdays);
         }
