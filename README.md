@@ -8,8 +8,6 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 
-
-
 # AI Football Predictor
 
 A Spring Boot application that predicts football match scores using multiple AI models (Anthropic Claude, OpenAI GPT,
@@ -33,17 +31,18 @@ with model comparison charts.
   performance charts per model
 
 ---
+
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | Java 25, Spring Boot 4.x |
-| AI | Spring AI 2.x, Anthropic Claude, OpenAI GPT, Mistral AI |
-| External APIs | [Brave Search API](https://brave.com/search/api/), [football-data.org API](https://www.football-data.org/) |
-| Database | PostgreSQL 17 |
-| Frontend | Thymeleaf, Chart.js |
-| Observability | Prometheus, Grafana, Grafana Alloy, Loki |
-| Infrastructure | Docker Compose, Traefik v3, TLS/HTTPS |
+| Layer          | Technology                                                                                             |
+|----------------|--------------------------------------------------------------------------------------------------------|
+| Backend        | Java 25, Spring Boot 4.x                                                                               |
+| AI             | Spring AI 2.x, Anthropic Claude, OpenAI GPT, Mistral AI                                                |
+| External APIs  | [Brave Search API](https://brave.com/search/), [football-data.org API](https://www.football-data.org/) |
+| Database       | PostgreSQL 17                                                                                          |
+| Frontend       | Thymeleaf, Chart.js                                                                                    |
+| Observability  | Prometheus, Grafana, Grafana Alloy, Loki                                                               |
+| Infrastructure | Docker Compose, Traefik v3, TLS/HTTPS                                                                  |
 
 ---
 
@@ -61,6 +60,30 @@ with model comparison charts.
   └── Fetch finished matches (football-data.org)
         └── Update actual scores + compute prediction points
 ```
+
+---
+
+## Why a Shared News Source Instead of Per-Model Web Search?
+
+OpenAI, Anthropic, and Mistral all offer some form of built-in web search. This project deliberately does **not** use
+them, and instead fetches news once via Brave Search and passes the same snippets to every model. The reasons:
+
+- **Fair comparison.** This is a model-vs-model accuracy benchmark. If each model fetched its own evidence, the
+  measurement would mix "which model predicts better" with "which model has better search," and the comparison would
+  stop being meaningful. Holding the input constant isolates the variable being tested.
+- **Reproducibility & auditability.** The exact snippets that went into every prompt are logged and persisted, so a bad
+  prediction can be replayed against the evidence the model actually saw. Built-in web search returns different results
+  on each call and exposes them only as opaque tool-use blocks.
+- **Provider parity.** Mistral has no web search on `/v1/chat/completions`, it lives on a separate `/v1/agents`
+  endpoint that Spring AI's `MistralAiChatModel` doesn't call. Brave gives all three models identical treatment without
+  a special path for one of them.
+- **Cost & predictability.** Anthropic charges per `web_search` tool call, OpenAI's search-preview models have their
+  own pricing and constraints (no `temperature`, no tools). Brave is one priced source, regardless of how many models
+  the pipeline fans out to.
+- **Recency control.** Results are explicitly bound to the past week and targeted at the specific matchup. Built-in
+  search uses opaque recency heuristics and may pull generic team pages or unrelated previews.
+- **Decoupling.** The news source is a swappable component (`NewsClient` interface, mock available). It can be replaced
+  with a sports-specific feed without touching any model code.
 
 ---
 
