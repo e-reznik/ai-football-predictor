@@ -85,6 +85,54 @@ them, and instead fetches news once via Brave Search and passes the same snippet
 - **Decoupling.** The news source is a swappable component (`NewsClient` interface, mock available). It can be replaced
   with a sports-specific feed without touching any model code.
 
+### Tavily
+
+[Tavily](https://www.tavily.com/) was tested as an alternative search provider before switching to Brave Search. For
+this use case, the results
+were less promising: match queries sometimes returned generic betting pages instead of reliable football news or
+analysis. Brave Search produced more relevant and trustworthy snippets for enriching the prediction prompts.
+
+### Perplexity
+
+[Perplexity](https://www.perplexity.ai/) could also be a useful alternative to evaluate later. It could either replace
+Brave Search as the external news source, providing researched match context before prompts are sent to the models, or
+be added as another AI model in the comparison. That would make it possible to test both its search quality and its
+prediction quality against the current model set.
+
+Pros:
+
+- Seamless integration with Spring Boot
+- Up-to-date information with sources
+- Built-in summarization of search results
+
+Cons:
+
+- Adds another LLM layer, so the pipeline no longer works with raw search data
+- LLM-based summarization adds a risk of hallucinated or distorted context
+
+### Gemini
+
+Gemini was not added because the setup effort was too high for this project. The other AI providers can be configured
+with a simple API key, while Gemini requires additional authentication software to be downloaded and installed. That
+would also have to be handled on the production server, which adds operational complexity without enough benefit for the
+current comparison.
+
+---
+
+## Future Improvements
+
+Possible next steps for the project:
+
+- **More LLMs and model versions.** Additional providers such as DeepSeek or xAI Grok could be added, as well as
+  open-source models and newer versions of the currently used models.
+- **Prompt experiments.** Different prompt structures could be tested to see whether the models produce more accurate or
+  more consistent predictions.
+- **Alternative scoring.** The scoring system could reward more than exact results and match tendencies, for example by
+  giving points for predicting the correct goal difference.
+- **More sports.** Other ball sports such as handball, hockey, or basketball could be supported, although exact score
+  prediction would be harder because many more goals or points are scored. Sports such as boxing or Formula 1 would need
+  a different evaluation system and therefore changes to the code.
+
 ---
 
 ## Getting Started
