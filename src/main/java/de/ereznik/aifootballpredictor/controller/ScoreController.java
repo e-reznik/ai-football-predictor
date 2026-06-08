@@ -15,6 +15,9 @@ import java.util.Map;
 
 @Controller
 public class ScoreController {
+    private static final int OVERALL_QUALIFIED_PREDICTIONS = 100;
+    private static final int COMPETITION_QUALIFIED_PREDICTIONS = 20;
+
     private final ScoreService scoreService;
     private final AIService aiService;
 
@@ -107,7 +110,9 @@ public class ScoreController {
                     competitionTotals.forEach((model, points) -> totals.merge(model, points, Integer::sum));
                     return totals;
                 }),
-                data.accuracyByModel()
+                data.accuracyByModel(),
+                activeModels,
+                OVERALL_QUALIFIED_PREDICTIONS
         ));
         for (String competition : data.totalByCompetitionAndModel().keySet()) {
             Map<String, Integer> scoredCounts = data.scoredCountByCompetitionAndModel().getOrDefault(competition, Map.of());
@@ -122,7 +127,9 @@ public class ScoreController {
                     scoredCounts,
                     avgPoints,
                     totals,
-                    data.accuracyByCompetitionAndModel().getOrDefault(competition, Map.of())
+                    data.accuracyByCompetitionAndModel().getOrDefault(competition, Map.of()),
+                    activeModels,
+                    COMPETITION_QUALIFIED_PREDICTIONS
             ));
         }
         return stats;
@@ -132,18 +139,30 @@ public class ScoreController {
                                                      Map<String, Integer> scoredCounts,
                                                      Map<String, Double> avgPoints,
                                                      Map<String, Integer> totals,
-                                                     Map<String, Map<String, Integer>> accuracy) {
+                                                     Map<String, Map<String, Integer>> accuracy,
+                                                     List<String> activeModels,
+                                                     int qualifiedPredictions) {
         Map<String, Object> rows = new LinkedHashMap<>();
         for (String model : models) {
             int predicted = scoredCounts.getOrDefault(model, 0);
+            double avg = avgPoints.getOrDefault(model, 0.0);
+            boolean benchmark = RandomPredictionService.MODEL_NAME.equals(model);
+            boolean active = !benchmark && activeModels.contains(model);
+            boolean qualified = active && predicted >= qualifiedPredictions;
+            double sampleWeight = active ? Math.min(1.0, (double) predicted / qualifiedPredictions) : 0.0;
+            double adjusted = avg * sampleWeight;
             Map<String, Integer> modelAccuracy = accuracy.getOrDefault(model, Map.of());
             rows.put(model, Map.of(
                     "predicted", predicted,
-                    "avg", avgPoints.getOrDefault(model, 0.0),
+                    "avg", avg,
+                    "adjusted", adjusted,
                     "total", totals.getOrDefault(model, 0),
                     "exact", modelAccuracy.getOrDefault("exact", 0),
                     "tendency", modelAccuracy.getOrDefault("tendency", 0),
-                    "wrong", modelAccuracy.getOrDefault("wrong", 0)
+                    "wrong", modelAccuracy.getOrDefault("wrong", 0),
+                    "active", active,
+                    "qualified", qualified,
+                    "status", benchmark ? "benchmark" : active ? (qualified ? "active" : "provisional") : "inactive"
             ));
         }
         return rows;
