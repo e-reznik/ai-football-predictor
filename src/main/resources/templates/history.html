@@ -397,10 +397,10 @@
                     <tbody>
                     <tr th:each="match : ${pastMatches}"
                         th:data-comp="${match.competition}"
-                        th:data-md="${match.gameDay}"
+                        th:data-md="${match.gameDay != null ? match.gameDay : '__none__'}"
                         th:data-consensus="${match.correctPredictions()}">
                         <td class="frozen"><span class="badge badge-blue" th:text="${match.competition}"></span></td>
-                        <td class="frozen"><span class="badge badge-gray" th:text="${match.gameDay}"></span></td>
+                        <td class="frozen"><span class="badge badge-gray" th:text="${match.gameDay != null ? match.gameDay : 'No MD'}"></span></td>
                         <td class="frozen team" th:text="${match.homeTeam}"></td>
                         <td class="frozen"><span class="vs">vs</span></td>
                         <td class="frozen team" th:text="${match.awayTeam}"></td>
@@ -483,8 +483,14 @@
     allRows.forEach(r => { comps.add(r.dataset.comp); mds.add(r.dataset.md); });
     [...comps].sort().forEach(c =>
         compSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
-    [...mds].sort((a, b) => Number(a) - Number(b)).forEach(m =>
-        mdSel.insertAdjacentHTML('beforeend', `<option value="${m}">MD ${m}</option>`));
+    [...mds].sort((a, b) => {
+        if (a === '__none__') return 1;
+        if (b === '__none__') return -1;
+        return Number(a) - Number(b);
+    }).forEach(m => {
+        const label = m === '__none__' ? 'No matchday' : `MD ${m}`;
+        mdSel.insertAdjacentHTML('beforeend', `<option value="${m}">${label}</option>`);
+    });
 
     // ── Core: filter → paginate → render ─────────────────────────
     function applyAll() {

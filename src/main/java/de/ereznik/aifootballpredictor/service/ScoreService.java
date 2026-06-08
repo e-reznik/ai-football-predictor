@@ -47,14 +47,16 @@ public class ScoreService {
             if (p.getScore() == null) continue;
 
             String competition = p.getMatch().getCompetitionName();
-            int matchday = p.getMatch().getGameDay();
+            Integer matchday = p.getMatch().getGameDay();
             int score = p.getScore();
 
             scoredCount.merge(model, 1, (a, b) -> a + b);
             totalPoints.merge(model, score, (a, b) -> a + b);
             addTotal(totals, competition, model, score);
             addScoredCount(scoredCountByCompetition, competition, model);
-            addByMatchday(byMatchday, competition, matchday, model, score);
+            if (matchday != null) {
+                addByMatchday(byMatchday, competition, matchday, model, score);
+            }
             addAccuracy(accuracy, model, score);
             addAccuracy(accuracyByCompetition, competition, model, score);
         }
@@ -182,7 +184,7 @@ public class ScoreService {
         }
         result.sort((a, b) -> !a.competition().equals(b.competition())
                 ? a.competition().compareTo(b.competition())
-                : Integer.compare(b.gameDay(), a.gameDay()));
+                : Comparator.nullsLast(Comparator.<Integer>reverseOrder()).compare(a.gameDay(), b.gameDay()));
         return result;
     }
 
@@ -214,7 +216,8 @@ public class ScoreService {
                 ));
             }
         }
-        result.sort((a, b) -> !a.competition().equals(b.competition()) ? a.competition().compareTo(b.competition()) : Integer.compare(a.gameDay(), b.gameDay()));
+        result.sort(Comparator.comparing(UpcomingMatchView::competition)
+                .thenComparing(UpcomingMatchView::gameDay, Comparator.nullsLast(Integer::compareTo)));
         return result;
     }
 

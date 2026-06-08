@@ -25,7 +25,6 @@ public class MatchEntity {
     private Long gameId;
     @Column(nullable = false)
     private String competitionName;
-    @Column(nullable = false)
     private Integer gameDay;
     @Column(nullable = false)
     private String teamHome;
