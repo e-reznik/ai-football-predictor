@@ -33,6 +33,7 @@ public class MatchEntity {
     private Long homeTeamId;
     private Long awayTeamId;
     private OffsetDateTime gameDate;
+    private String status;
     private Integer homeGoalsScored;
     private Integer awayGoalsScored;
     @OneToMany(mappedBy = "match")

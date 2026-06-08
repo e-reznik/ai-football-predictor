@@ -25,19 +25,23 @@ public class FootballClientImpl implements FootballClient {
     }
 
     @Override
-    public MatchesResponse fetchFinishedMatches(LocalDate from, LocalDate to) {
-        return fetchMatches(from, to, Status.FINISHED);
+    public MatchesResponse fetchMatchUpdates(LocalDate from, LocalDate to) {
+        return fetchMatches(from, to, null);
     }
 
     private MatchesResponse fetchMatches(LocalDate from, LocalDate to, Status status) {
         return restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/matches")
-                        .queryParam("dateFrom", from)
-                        .queryParam("dateTo", to)
-                        .queryParam("status", status)
-                        .queryParam("competitions=BL1,PL,SA,PD,FL1,PPL,DED,BSA,ELC,CL,WC,EC,CLI")
-                        .build())
+                .uri(uriBuilder -> {
+                    uriBuilder
+                            .path("/matches")
+                            .queryParam("dateFrom", from)
+                            .queryParam("dateTo", to)
+                            .queryParam("competitions=BL1,PL,SA,PD,FL1,PPL,DED,BSA,ELC,CL,WC,EC,CLI");
+                    if (status != null) {
+                        uriBuilder.queryParam("status", status);
+                    }
+                    return uriBuilder.build();
+                })
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .body(MatchesResponse.class);

@@ -7,6 +7,5 @@ import java.time.LocalDate;
 public interface FootballClient {
     MatchesResponse fetchScheduledMatches(LocalDate from, LocalDate to);
 
-    MatchesResponse fetchFinishedMatches(LocalDate from, LocalDate to);
-
+    MatchesResponse fetchMatchUpdates(LocalDate from, LocalDate to);
 }

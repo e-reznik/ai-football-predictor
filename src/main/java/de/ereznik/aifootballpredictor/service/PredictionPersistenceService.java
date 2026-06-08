@@ -62,6 +62,7 @@ public class PredictionPersistenceService {
                 .homeTeamId(match.homeTeam().id())
                 .awayTeamId(match.awayTeam().id())
                 .gameDate(match.utcDate())
+                .status(match.status())
                 .build();
     }
 

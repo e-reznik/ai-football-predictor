@@ -16,6 +16,14 @@ import java.util.*;
 
 @Service
 public class ScoreService {
+    private static final Set<String> NOT_UPCOMING_STATUSES = Set.of(
+            "FINISHED",
+            "AWARDED",
+            "SUSPENDED",
+            "CANCELLED",
+            "POSTPONED"
+    );
+
     private final PredictionRepository predictionRepository;
     private final MatchRepository matchRepository;
 
@@ -193,6 +201,8 @@ public class ScoreService {
         List<MatchEntity> upcomingEntities = matchRepository.findByHomeGoalsScoredIsNull();
         List<UpcomingMatchView> result = new ArrayList<>();
         for (MatchEntity match : upcomingEntities) {
+            String status = match.getStatus();
+            if (status != null && NOT_UPCOMING_STATUSES.contains(status)) continue;
             if (match.getPredictions() == null || match.getPredictions().isEmpty()) continue;
             Map<String, String> predictions = new LinkedHashMap<>();
             Map<String, Integer> probabilities = new LinkedHashMap<>();

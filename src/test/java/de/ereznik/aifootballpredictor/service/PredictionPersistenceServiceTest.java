@@ -29,6 +29,7 @@ class PredictionPersistenceServiceTest {
         MatchesResponse.Match arsenalPsgFinal = new MatchesResponse.Match(
                 552096L,
                 OffsetDateTime.parse("2025-05-31T19:00:00Z"),
+                "FINISHED",
                 null,
                 new MatchesResponse.Competition(2001L, "UEFA Champions League", "CL"),
                 new MatchesResponse.Match.Team(57L, "Arsenal"),
@@ -56,6 +57,7 @@ class PredictionPersistenceServiceTest {
         assertThat(savedMatch.get().getGameDay()).isNull();
         assertThat(savedMatch.get().getTeamHome()).isEqualTo("Arsenal");
         assertThat(savedMatch.get().getTeamAway()).isEqualTo("Paris Saint-Germain");
+        assertThat(savedMatch.get().getStatus()).isEqualTo("FINISHED");
         assertThat(savedPredictions).hasSize(1);
         assertThat(savedPredictions.getFirst().getMatch().getGameDay()).isNull();
         assertThat(savedPredictions.getFirst().getHomeGoalsPredicted()).isEqualTo(1);
