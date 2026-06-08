@@ -25,7 +25,6 @@ public class MatchEntity {
     private Long gameId;
     @Column(nullable = false)
     private String competitionName;
-    @Column(nullable = false)
     private Integer gameDay;
     @Column(nullable = false)
     private String teamHome;
@@ -34,6 +33,7 @@ public class MatchEntity {
     private Long homeTeamId;
     private Long awayTeamId;
     private OffsetDateTime gameDate;
+    private String status;
     private Integer homeGoalsScored;
     private Integer awayGoalsScored;
     @OneToMany(mappedBy = "match")

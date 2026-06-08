@@ -8,8 +8,6 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 
-
-
 # AI Football Predictor
 
 A Spring Boot application that predicts football match scores using multiple AI models (Anthropic Claude, OpenAI GPT,
@@ -33,17 +31,18 @@ with model comparison charts.
   performance charts per model
 
 ---
+
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | Java 25, Spring Boot 4.x |
-| AI | Spring AI 2.x, Anthropic Claude, OpenAI GPT, Mistral AI |
-| External APIs | [Brave Search API](https://brave.com/search/api/), [football-data.org API](https://www.football-data.org/) |
-| Database | PostgreSQL 17 |
-| Frontend | Thymeleaf, Chart.js |
-| Observability | Prometheus, Grafana, Grafana Alloy, Loki |
-| Infrastructure | Docker Compose, Traefik v3, TLS/HTTPS |
+| Layer          | Technology                                                                                             |
+|----------------|--------------------------------------------------------------------------------------------------------|
+| Backend        | Java 25, Spring Boot 4.x                                                                               |
+| AI             | Spring AI 2.x, Anthropic Claude, OpenAI GPT, Mistral AI                                                |
+| External APIs  | [Brave Search API](https://brave.com/search/), [football-data.org API](https://www.football-data.org/) |
+| Database       | PostgreSQL 17                                                                                          |
+| Frontend       | Thymeleaf, Chart.js                                                                                    |
+| Observability  | Prometheus, Grafana, Grafana Alloy, Loki                                                               |
+| Infrastructure | Docker Compose, Traefik v3, TLS/HTTPS                                                                  |
 
 ---
 
@@ -61,6 +60,78 @@ with model comparison charts.
   └── Fetch finished matches (football-data.org)
         └── Update actual scores + compute prediction points
 ```
+
+---
+
+## Why a Shared News Source Instead of Per-Model Web Search?
+
+OpenAI, Anthropic, and Mistral all offer some form of built-in web search. This project deliberately does **not** use
+them, and instead fetches news once via Brave Search and passes the same snippets to every model. The reasons:
+
+- **Fair comparison.** This is a model-vs-model accuracy benchmark. If each model fetched its own evidence, the
+  measurement would mix "which model predicts better" with "which model has better search," and the comparison would
+  stop being meaningful. Holding the input constant isolates the variable being tested.
+- **Reproducibility & auditability.** The exact snippets that went into every prompt are logged and persisted, so a bad
+  prediction can be replayed against the evidence the model actually saw. Built-in web search returns different results
+  on each call and exposes them only as opaque tool-use blocks.
+- **Provider parity.** Mistral has no web search on `/v1/chat/completions`, it lives on a separate `/v1/agents`
+  endpoint that Spring AI's `MistralAiChatModel` doesn't call. Brave gives all three models identical treatment without
+  a special path for one of them.
+- **Cost & predictability.** Anthropic charges per `web_search` tool call, OpenAI's search-preview models have their
+  own pricing and constraints (no `temperature`, no tools). Brave is one priced source, regardless of how many models
+  the pipeline fans out to.
+- **Recency control.** Results are explicitly bound to the past week and targeted at the specific matchup. Built-in
+  search uses opaque recency heuristics and may pull generic team pages or unrelated previews.
+- **Decoupling.** The news source is a swappable component (`NewsClient` interface, mock available). It can be replaced
+  with a sports-specific feed without touching any model code.
+
+### Tavily
+
+[Tavily](https://www.tavily.com/) was tested as an alternative search provider before switching to Brave Search. For
+this use case, the results
+were less promising: match queries sometimes returned generic betting pages instead of reliable football news or
+analysis. Brave Search produced more relevant and trustworthy snippets for enriching the prediction prompts.
+
+### Perplexity
+
+[Perplexity](https://www.perplexity.ai/) could also be a useful alternative to evaluate later. It could either replace
+Brave Search as the external news source, providing researched match context before prompts are sent to the models, or
+be added as another AI model in the comparison. That would make it possible to test both its search quality and its
+prediction quality against the current model set.
+
+Pros:
+
+- Seamless integration with Spring Boot
+- Up-to-date information with sources
+- Built-in summarization of search results
+
+Cons:
+
+- Adds another LLM layer, so the pipeline no longer works with raw search data
+- LLM-based summarization adds a risk of hallucinated or distorted context
+
+### Gemini
+
+Gemini was not added because the setup effort was too high for this project. The other AI providers can be configured
+with a simple API key, while Gemini requires additional authentication software to be downloaded and installed. That
+would also have to be handled on the production server, which adds operational complexity without enough benefit for the
+current comparison.
+
+---
+
+## Future Improvements
+
+Possible next steps for the project:
+
+- **More LLMs and model versions.** Additional providers such as DeepSeek or xAI Grok could be added, as well as
+  open-source models and newer versions of the currently used models.
+- **Prompt experiments.** Different prompt structures could be tested to see whether the models produce more accurate or
+  more consistent predictions.
+- **Alternative scoring.** The scoring system could reward more than exact results and match tendencies, for example by
+  giving points for predicting the correct goal difference.
+- **More sports.** Other ball sports such as handball, hockey, or basketball could be supported, although exact score
+  prediction would be harder because many more goals or points are scored. Sports such as boxing or Formula 1 would need
+  a different evaluation system and therefore changes to the code.
 
 ---
 

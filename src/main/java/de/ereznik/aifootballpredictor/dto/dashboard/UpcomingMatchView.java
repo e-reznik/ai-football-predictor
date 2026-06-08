@@ -4,9 +4,10 @@ import java.util.Map;
 
 public record UpcomingMatchView(
         String competition,
-        int gameDay,
+        Integer gameDay,
         String homeTeam,
         String awayTeam,
+        ConsensusPredictionView consensusPrediction,
         Map<String, String> predictionsByModel,
         Map<String, Integer> probabilitiesByModel
 ) {

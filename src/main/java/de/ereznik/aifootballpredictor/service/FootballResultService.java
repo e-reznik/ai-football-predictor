@@ -34,16 +34,14 @@ public class FootballResultService {
     public List<MatchesResponse> getMatches() {
         List<MatchesResponse> matchesAllLeagues = new ArrayList<>();
         LocalDate from = LocalDate.now().minusDays(3);
-        LocalDate to = LocalDate.now();
+        LocalDate to = LocalDate.now().plusDays(5);
 
-        log.info("Getting finished matches from {} to {}", from, to);
-        MatchesResponse matchesOneLeague = footballClient.fetchFinishedMatches(from, to);
+        log.info("Getting match status updates from {} to {}", from, to);
+        MatchesResponse matchesOneLeague = footballClient.fetchMatchUpdates(from, to);
         if (matchesOneLeague != null && !matchesOneLeague.matches().isEmpty()) {
             matchesAllLeagues.add(matchesOneLeague);
         } else {
-            // TODO: Handle cases, when no matches are played
-            // TODO: Handle cases, when matches got canceled or postponed
-            log.warn("No finished matches found from {} to {}", from, to);
+            log.warn("No match status updates found from {} to {}", from, to);
         }
         return matchesAllLeagues;
     }

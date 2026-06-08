@@ -299,6 +299,33 @@
             vertical-align: middle;
         }
 
+        .badge-provisional {
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .badge-inactive {
+            background: #e2e8f0;
+            color: #475569;
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .badge-benchmark {
+            background: #e0f2fe;
+            color: #075985;
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
         .team {
             font-weight: 500;
             color: var(--text-primary);
@@ -328,6 +355,25 @@
             font-size: 0.73rem;
             color: var(--text-secondary);
             margin-left: 4px;
+        }
+
+        .consensus {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 120px;
+        }
+
+        .consensus-score {
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            color: var(--success);
+        }
+
+        .consensus-meta {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
         }
 
         /* ── Ranking table ──────────────────────────────────── */
@@ -593,7 +639,7 @@
                 <div class="kpi-sub" th:text="${totalPredictions} + ' predictions total'">—</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Best Model vs. Random</div>
+                <div class="kpi-label">Best Active Model</div>
                 <div class="kpi-value color-success" id="kpi-best-name" style="font-size:1.3rem">—</div>
                 <div class="kpi-sub" id="kpi-best-pts">—</div>
             </div>
@@ -750,6 +796,7 @@
                         <th>Home</th>
                         <th></th>
                         <th>Away</th>
+                        <th>Consensus</th>
                         <th th:each="model : ${models}" th:text="${model}"></th>
                     </tr>
                     </thead>
@@ -760,6 +807,15 @@
                         <td class="team" th:text="${match.homeTeam}"></td>
                         <td><span class="vs">vs</span></td>
                         <td class="team" th:text="${match.awayTeam}"></td>
+                        <td>
+                            <div class="consensus" th:if="${match.consensusPrediction != null}">
+                                <span class="consensus-score"
+                                      th:text="${match.consensusPrediction.predictedScore}"></span>
+                                <span class="consensus-meta"
+                                      th:text="${match.consensusPrediction.outcome} + ' · ' + ${match.consensusPrediction.averageConfidence} + '% · ' + ${match.consensusPrediction.agreeingModels} + '/' + ${match.consensusPrediction.totalModels}"></span>
+                            </div>
+                            <span class="no-pred" th:unless="${match.consensusPrediction != null}">—</span>
+                        </td>
                         <td th:each="model : ${models}">
                             <span th:if="${match.predictionsByModel.containsKey(model)}">
                                 <span class="pred" th:text="${match.predictionsByModel.get(model)}"></span>
@@ -802,17 +858,23 @@
     const PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 
-    // KPI — leading model (by avg pts/game)
-    if (Object.keys(avgPointsPerGame).length) {
-        const nonRandom = Object.entries(avgPointsPerGame).filter(([m]) => m !== 'Random');
-        const best = nonRandom.sort((a, b) => b[1] - a[1])[0];
+    // KPI — leading active model by sample-adjusted score
+    if (leaderboardStats?.ALL) {
+        const candidates = Object.entries(leaderboardStats.ALL)
+            .filter(([model, values]) => model !== 'Random' && values.active);
+        const best = candidates.sort((a, b) =>
+            (b[1].adjusted || 0) - (a[1].adjusted || 0)
+            || (b[1].avg || 0) - (a[1].avg || 0)
+            || String(a[0]).localeCompare(String(b[0]))
+        )[0];
         if (best) {
             document.getElementById('kpi-best-name').textContent = best[0].split('/').pop();
-            const games = scoredPredictionCounts[best[0]] || 0;
+            const values = best[1];
+            const games = values.predicted || 0;
             const randomAvg = avgPointsPerGame['Random'];
             const sub = randomAvg != null
-                ? best[1].toFixed(2) + ' pts/game · Random: ' + randomAvg.toFixed(2)
-                : best[1].toFixed(2) + ' pts/game · ' + games + ' games';
+                ? (values.avg || 0).toFixed(2) + ' pts/game · Random: ' + randomAvg.toFixed(2)
+                : (values.avg || 0).toFixed(2) + ' pts/game · ' + games + ' games';
             document.getElementById('kpi-best-pts').textContent = sub;
         }
     }
@@ -859,17 +921,27 @@
                 shortName: model.split('/').pop(),
                 predicted: values.predicted || 0,
                 avg: values.avg || 0,
+                adjusted: values.adjusted || 0,
                 total: values.total || 0,
                 exact: values.exact || 0,
                 tendency: values.tendency || 0,
                 wrong: values.wrong || 0,
-                active: activeModels.has(model)
+                active: Boolean(values.active),
+                qualified: Boolean(values.qualified),
+                status: values.status || (activeModels.has(model) ? 'active' : 'inactive')
             }));
             rankByModel = new Map(
                 [...rankingRows]
-                    .sort((a, b) => b.avg - a.avg || b.total - a.total || a.shortName.localeCompare(b.shortName))
+                    .sort((a, b) => rowPriority(a) - rowPriority(b) || b.avg - a.avg || b.total - a.total || a.shortName.localeCompare(b.shortName))
                     .map((row, idx) => [row.model, idx + 1])
             );
+        }
+
+        function rowPriority(row) {
+            if (row.status === 'active') return 0;
+            if (row.status === 'provisional') return 1;
+            if (row.status === 'inactive') return 2;
+            return 3;
         }
 
         function compareRankingRows(a, b) {
@@ -884,7 +956,7 @@
                 result = (aVal ?? 0) - (bVal ?? 0);
             }
             return result === 0
-                ? b.avg - a.avg || b.total - a.total || a.shortName.localeCompare(b.shortName)
+                ? rowPriority(a) - rowPriority(b) || b.avg - a.avg || b.total - a.total || a.shortName.localeCompare(b.shortName)
                 : result * dir;
         }
 
@@ -910,12 +982,10 @@
                 const modelCell = document.createElement('td');
                 modelCell.className = 'team';
                 modelCell.appendChild(document.createTextNode(row.shortName));
-                if (row.active) {
-                    const activeBadge = document.createElement('span');
-                    activeBadge.className = 'badge badge-active';
-                    activeBadge.textContent = 'active';
-                    modelCell.appendChild(activeBadge);
-                }
+                const statusBadge = document.createElement('span');
+                statusBadge.className = 'badge badge-' + row.status;
+                statusBadge.textContent = row.status;
+                modelCell.appendChild(statusBadge);
                 tr.appendChild(modelCell);
 
                 [
