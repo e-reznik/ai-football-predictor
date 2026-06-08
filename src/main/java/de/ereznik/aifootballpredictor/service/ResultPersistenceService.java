@@ -2,6 +2,7 @@ package de.ereznik.aifootballpredictor.service;
 
 import de.ereznik.aifootballpredictor.dto.entity.PredictionEntity;
 import de.ereznik.aifootballpredictor.dto.football.MatchesResponse;
+import de.ereznik.aifootballpredictor.dto.football.Status;
 import de.ereznik.aifootballpredictor.repository.MatchRepository;
 import de.ereznik.aifootballpredictor.repository.PredictionRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +27,19 @@ public class ResultPersistenceService {
         for (MatchesResponse matches : matchesByCompetition) {
             for (MatchesResponse.Match match : matches.matches()) {
                 matchRepository.findByGameId(match.id()).ifPresent(matchEntity -> {
+                    matchEntity.setStatus(match.status());
+                    List<PredictionEntity> predictionEntity = predictionRepository.findByMatchId(matchEntity.getId());
+
+                    if (!Status.FINISHED.name().equals(match.status())) {
+                        matchEntity.setHomeGoalsScored(null);
+                        matchEntity.setAwayGoalsScored(null);
+                        predictionEntity.forEach(prediction -> prediction.setScore(null));
+                        return;
+                    }
+
                     matchEntity.setHomeGoalsScored(match.score().fullTime().home());
                     matchEntity.setAwayGoalsScored(match.score().fullTime().away());
 
-                    List<PredictionEntity> predictionEntity = predictionRepository.findByMatchId(matchEntity.getId());
                     for (PredictionEntity predictionEntityTemp : predictionEntity) {
                         int score = calculateScore(predictionEntityTemp, match);
                         predictionEntityTemp.setScore(score);
