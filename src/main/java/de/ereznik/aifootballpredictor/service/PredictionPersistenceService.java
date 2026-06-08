@@ -59,6 +59,9 @@ public class PredictionPersistenceService {
                 .gameDay(match.matchday())
                 .teamHome(match.homeTeam().name())
                 .teamAway(match.awayTeam().name())
+                .homeTeamId(match.homeTeam().id())
+                .awayTeamId(match.awayTeam().id())
+                .gameDate(match.utcDate())
                 .build();
     }
 
@@ -86,6 +89,7 @@ public class PredictionPersistenceService {
     }
 
     private PredictionResponse.Match findTeamById(PredictionResponse predictionResponse, Long homeTeamId, Long awayTeamId) {
+        if (homeTeamId == null || awayTeamId == null) return null;
         for (PredictionResponse.Match match : predictionResponse.matches()) {
             if (homeTeamId.equals(match.homeId()) && awayTeamId.equals(match.awayId())) {
                 return match;

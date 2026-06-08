@@ -30,8 +30,8 @@ public class JsonUtils {
             json.append("    {\n");
             json.append("      \"home\": \"").append(match.homeTeam().name()).append("\",\n");
             json.append("      \"away\": \"").append(match.awayTeam().name()).append("\",\n");
-            json.append("      \"homeId\": \"").append(match.homeTeam().id()).append("\",\n");
-            json.append("      \"awayId\": \"").append(match.awayTeam().id()).append("\",\n");
+            json.append("      \"homeId\": ").append(match.homeTeam().id()).append(",\n");
+            json.append("      \"awayId\": ").append(match.awayTeam().id()).append(",\n");
             json.append("      \"predictedHome\": ,\n");
             json.append("      \"predictedAway\": ,\n");
             json.append("      \"confidence\": \n");

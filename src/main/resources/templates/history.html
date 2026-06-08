@@ -53,19 +53,27 @@
 
         .header-subtitle { font-size: 0.8rem; color: rgba(255,255,255,0.55); margin-top: 2px; }
 
+        .header-nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         .nav-link {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.18);
-            color: rgba(255,255,255,0.85);
-            padding: 7px 16px;
-            border-radius: 100px;
-            font-size: 0.78rem;
-            font-weight: 500;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: rgba(255, 255, 255, 0.85);
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
             text-decoration: none;
+            white-space: nowrap;
             transition: background 0.15s;
         }
 
-        .nav-link:hover { background: rgba(255,255,255,0.2); }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.2); }
+        .nav-link.active { background: #6366f1; color: #fff; border-color: #6366f1; }
 
         .main {
             padding: 32px 40px;
@@ -344,7 +352,11 @@
             <div class="header-subtitle">Past Predictions</div>
         </div>
     </div>
-    <a class="nav-link" href="/">← Dashboard</a>
+    <nav class="header-nav">
+        <a class="nav-link" href="/">Dashboard</a>
+        <a class="nav-link active" href="/history">Past Predictions</a>
+        <a class="nav-link" href="/about">About</a>
+    </nav>
 </header>
 
 <main class="main">
@@ -385,10 +397,10 @@
                     <tbody>
                     <tr th:each="match : ${pastMatches}"
                         th:data-comp="${match.competition}"
-                        th:data-md="${match.gameDay}"
+                        th:data-md="${match.gameDay != null ? match.gameDay : '__none__'}"
                         th:data-consensus="${match.correctPredictions()}">
                         <td class="frozen"><span class="badge badge-blue" th:text="${match.competition}"></span></td>
-                        <td class="frozen"><span class="badge badge-gray" th:text="${match.gameDay}"></span></td>
+                        <td class="frozen"><span class="badge badge-gray" th:text="${match.gameDay != null ? match.gameDay : 'No MD'}"></span></td>
                         <td class="frozen team" th:text="${match.homeTeam}"></td>
                         <td class="frozen"><span class="vs">vs</span></td>
                         <td class="frozen team" th:text="${match.awayTeam}"></td>
@@ -471,8 +483,14 @@
     allRows.forEach(r => { comps.add(r.dataset.comp); mds.add(r.dataset.md); });
     [...comps].sort().forEach(c =>
         compSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
-    [...mds].sort((a, b) => Number(a) - Number(b)).forEach(m =>
-        mdSel.insertAdjacentHTML('beforeend', `<option value="${m}">MD ${m}</option>`));
+    [...mds].sort((a, b) => {
+        if (a === '__none__') return 1;
+        if (b === '__none__') return -1;
+        return Number(a) - Number(b);
+    }).forEach(m => {
+        const label = m === '__none__' ? 'No matchday' : `MD ${m}`;
+        mdSel.insertAdjacentHTML('beforeend', `<option value="${m}">${label}</option>`);
+    });
 
     // ── Core: filter → paginate → render ─────────────────────────
     function applyAll() {

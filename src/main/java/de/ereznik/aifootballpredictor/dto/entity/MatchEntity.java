@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Entity
@@ -24,7 +25,6 @@ public class MatchEntity {
     private Long gameId;
     @Column(nullable = false)
     private String competitionName;
-    @Column(nullable = false)
     private Integer gameDay;
     @Column(nullable = false)
     private String teamHome;
@@ -32,6 +32,7 @@ public class MatchEntity {
     private String teamAway;
     private Long homeTeamId;
     private Long awayTeamId;
+    private OffsetDateTime gameDate;
     private Integer homeGoalsScored;
     private Integer awayGoalsScored;
     @OneToMany(mappedBy = "match")

@@ -49,13 +49,14 @@ public class FootballPredictionService {
     public List<MatchesResponse> getMatches() {
         List<MatchesResponse> matchesAllLeagues = new ArrayList<>();
         LocalDate today = LocalDate.now();
-        log.info("Getting matches for {}", today);
-        MatchesResponse matchesOneLeague = footballClient.fetchScheduledMatches(today, today);
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        log.info("Getting matches for {} - {}", today, tomorrow);
+        MatchesResponse matchesOneLeague = footballClient.fetchScheduledMatches(today, tomorrow);
         if (matchesOneLeague != null && !matchesOneLeague.matches().isEmpty()) {
             matchesAllLeagues.add(matchesOneLeague);
         } else {
             // TODO: Handle cases, when no matches are found
-            log.warn("No matches found for {}", today);
+            log.info("No matches found for {}", today);
         }
         return matchesAllLeagues;
     }

@@ -44,6 +44,12 @@ public class AIService {
                 .toList());
     }
 
+    public List<String> getActiveModelNames() {
+        return chatModels.stream()
+                .map(m -> m.getDefaultOptions().getModel())
+                .toList();
+    }
+
     public Map<Competition, String> createPrompts(NewsPerMatchPerCompetition newsPerMatchPerCompetition) {
         Map<Competition, String> promptsPerCompetition = new HashMap<>();
 
@@ -68,7 +74,7 @@ public class AIService {
                 if (newsSearchResult.news() != null && !newsSearchResult.news().results().isEmpty()) {
                     for (var newsResult : newsSearchResult.news().results()) {
                         promptPerCompetition.append("\nTitle: ").append(newsResult.title()).append("\n");
-                        if (!newsResult.extraSnippets().isEmpty()) {
+                        if (newsResult.extraSnippets() != null && !newsResult.extraSnippets().isEmpty()) {
                             for (var extraSnippets : newsResult.extraSnippets()) {
                                 promptPerCompetition.append("- ").append(extraSnippets).append("\n");
                             }
@@ -94,7 +100,7 @@ public class AIService {
 
         return promptsPerCompetition;
     }
-    
+
     public List<PredictionResponse> getAnswerFromChatModel(Map<Competition, String> promptsPerCompetition) {
         List<PredictionResponse> predictions = new ArrayList<>();
         for (ChatModel chatModel : chatModels) {
