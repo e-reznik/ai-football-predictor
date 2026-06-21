@@ -16,6 +16,14 @@ import java.util.*;
 
 @Service
 public class ScoreService {
+    private static final Set<String> NOT_UPCOMING_STATUSES = Set.of(
+            "FINISHED",
+            "AWARDED",
+            "SUSPENDED",
+            "CANCELLED",
+            "POSTPONED"
+    );
+
     private final PredictionRepository predictionRepository;
     private final MatchRepository matchRepository;
 
@@ -47,14 +55,16 @@ public class ScoreService {
             if (p.getScore() == null) continue;
 
             String competition = p.getMatch().getCompetitionName();
-            int matchday = p.getMatch().getGameDay();
+            Integer matchday = p.getMatch().getGameDay();
             int score = p.getScore();
 
             scoredCount.merge(model, 1, (a, b) -> a + b);
             totalPoints.merge(model, score, (a, b) -> a + b);
             addTotal(totals, competition, model, score);
             addScoredCount(scoredCountByCompetition, competition, model);
-            addByMatchday(byMatchday, competition, matchday, model, score);
+            if (matchday != null) {
+                addByMatchday(byMatchday, competition, matchday, model, score);
+            }
             addAccuracy(accuracy, model, score);
             addAccuracy(accuracyByCompetition, competition, model, score);
         }
@@ -182,7 +192,7 @@ public class ScoreService {
         }
         result.sort((a, b) -> !a.competition().equals(b.competition())
                 ? a.competition().compareTo(b.competition())
-                : Integer.compare(b.gameDay(), a.gameDay()));
+                : Comparator.nullsLast(Comparator.<Integer>reverseOrder()).compare(a.gameDay(), b.gameDay()));
         return result;
     }
 
@@ -191,6 +201,8 @@ public class ScoreService {
         List<MatchEntity> upcomingEntities = matchRepository.findByHomeGoalsScoredIsNull();
         List<UpcomingMatchView> result = new ArrayList<>();
         for (MatchEntity match : upcomingEntities) {
+            String status = match.getStatus();
+            if (status != null && NOT_UPCOMING_STATUSES.contains(status)) continue;
             if (match.getPredictions() == null || match.getPredictions().isEmpty()) continue;
             Map<String, String> predictions = new LinkedHashMap<>();
             Map<String, Integer> probabilities = new LinkedHashMap<>();
@@ -214,7 +226,8 @@ public class ScoreService {
                 ));
             }
         }
-        result.sort((a, b) -> !a.competition().equals(b.competition()) ? a.competition().compareTo(b.competition()) : Integer.compare(a.gameDay(), b.gameDay()));
+        result.sort(Comparator.comparing(UpcomingMatchView::competition)
+                .thenComparing(UpcomingMatchView::gameDay, Comparator.nullsLast(Integer::compareTo)));
         return result;
     }
 

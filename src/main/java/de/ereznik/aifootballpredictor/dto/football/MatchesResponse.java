@@ -13,6 +13,7 @@ public record MatchesResponse(List<Match> matches) {
     public record Match(
             Long id,
             OffsetDateTime utcDate,
+            String status,
             Integer matchday,
             Competition competition,
             Team homeTeam,

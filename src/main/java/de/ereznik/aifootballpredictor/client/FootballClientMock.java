@@ -24,7 +24,7 @@ public class FootballClientMock implements FootballClient {
     }
 
     @Override
-    public MatchesResponse fetchFinishedMatches(LocalDate from, LocalDate to) {
+    public MatchesResponse fetchMatchUpdates(LocalDate from, LocalDate to) {
         return getMatches(Status.FINISHED);
     }
 

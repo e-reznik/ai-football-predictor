@@ -4,7 +4,7 @@ import java.util.Map;
 
 public record PastMatchView(
         String competition,
-        int gameDay,
+        Integer gameDay,
         String homeTeam,
         String awayTeam,
         int homeGoalsScored,
